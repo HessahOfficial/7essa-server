@@ -82,5 +82,8 @@ const propertySchema = new mongoose.Schema({
       'Property must have the investment documents',
     ],
   },
-  slug: String,
 });
+
+const Property = mongoose.model('Property', propertySchema);
+
+module.exports = Property;
