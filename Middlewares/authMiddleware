@@ -1,0 +1,25 @@
+const Token = require('../Models/tokenModel');
+
+exports.verifyRefreshTokenInDb = async (req, res, next) => {
+  const { refreshToken } = req.body;
+
+  try {
+    if (!refreshToken) {
+      return res
+        .status(400)
+        .json({ message: 'Refresh token required' });
+    }
+
+    const tokenInDb = await Token.findOne({ refreshToken });
+    if (!tokenInDb) {
+      return res.status(403).json({
+        message: 'Invalid or expired refresh token',
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
