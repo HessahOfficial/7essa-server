@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const propertySchema = new mongoose.Schema({
   title: {
     type: String,
+    unique: true,
     required: [true, 'Property must have a title'],
   },
   description: {
