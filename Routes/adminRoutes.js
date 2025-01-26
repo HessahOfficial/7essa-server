@@ -15,3 +15,6 @@ router
   .delete(adminController.deleteProperty);
 
 module.exports = router;
+
+
+
