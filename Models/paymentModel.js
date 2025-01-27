@@ -1,12 +1,11 @@
 const mongoose = require('mongoose');
 
 const paymentSchema = new mongoose.Schema({
-  userId: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-    },
-  ],
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+
   amount: {
     type: Number,
     required: [true, 'amount is required'],
@@ -24,7 +23,7 @@ const paymentSchema = new mongoose.Schema({
   paymentStatus: {
     type: String,
     required: [true, 'payment status is required'],
-    enum: ['pending', 'paid', 'cancelled'],
+    enum: ['pending', 'paid', 'declined'],
   },
   paymentDate: {
     type: Date,
