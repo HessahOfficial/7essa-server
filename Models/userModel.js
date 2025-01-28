@@ -7,7 +7,13 @@ const userSchema = new mongoose.Schema(
     emailVerified: { type: Boolean },
     ID_Verified: { type: Boolean },
     googleId: { type: String },
-    password: { type: String, required: true },
+    password: {
+      type: String,
+      required: function () {
+        return !this.googleId;
+      },
+      select: false,
+    },
     role: { type: String, default: 'user' },
     phoneNumber: { type: Number },
     email_verification_code: { type: Number },

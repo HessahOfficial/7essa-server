@@ -4,6 +4,8 @@ const {
   signin,
   refreshToken,
   logout,
+  googleAuth,
+  googleAuthCallback,
 } = require('../Controllers/authController');
 const {
   verifyRefreshTokenInDb,
@@ -20,6 +22,9 @@ router.post(
   verifyRefreshTokenInDb,
   refreshToken,
 );
+router.get('/google', googleAuth);
+
+router.get('/google/callback', googleAuthCallback);
 
 router.post('/logout', logout);
 

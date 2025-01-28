@@ -1,8 +1,12 @@
 const bcrypt = require('bcryptjs');
+const passport = require('passport');
+const session = require('express-session');
+require('../Config/passport');
+
 const User = require('../Models/userModel');
 const Token = require('../Models/tokenModel');
 const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
+
 const dotenv = require('dotenv');
 dotenv.config();
 
@@ -192,3 +196,20 @@ exports.logout = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// Controller function to initiate Google OAuth flow
+exports.googleAuth = passport.authenticate('google', {
+  scope: ['profile', 'email'], // Define the data you're requesting from Google
+});
+
+// Controller function to handle the Google callback
+(exports.googleAuthCallback = passport.authenticate(
+  'google',
+  {
+    failureRedirect: '/',
+  },
+)),
+  (req, res) => {
+    // Successfully authenticated
+    res.send('You are logged in with Google!');
+  };

@@ -1,29 +1,30 @@
-//this is jonas mail file to use it if needed
-
 const nodemailer = require('nodemailer');
 
+const transport = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USERNAME,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
 const sendEmail = async (options) => {
-  //1) create a transporter
-  const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    auth: {
-      user: process.env.EMAIL_USERNAME,
-      pass: process.env.EMAIL_PASSWORD,
-    },
-    //ACTIVATE in gmail "less secure app" option
-  });
-
-  //2) create mail options
-  const mailOptions = {
-    from: 'Mohamed Hisham <mohamedhisham7889@gmail.com>',
-    to: options.email,
-    subject: options.subject,
-    text: options.message,
-  };
-
-  //3) send email
-  await transporter.sendMail(mailOptions);
+  try {
+    const info = await transport.sendMail({
+      from: '"Hessah " <Support Team>',
+      to: options.email,
+      subject: options.subject,
+      text: options.text,
+      html: options.html || '',
+      attachments: options.attachments || [],
+    });
+    console.log('Email sent: %s', info.messageId);
+  } catch (error) {
+    console.error('Error sending email:', error);
+    throw new Error(
+      'There was an error sending the email. Try again later.',
+    );
+  }
 };
 
 module.exports = sendEmail;
