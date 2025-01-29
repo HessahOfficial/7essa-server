@@ -2,7 +2,7 @@ const factory = require('./handlerFactory');
 const Property = require('../Models/propertyModel');
 const Payment = require('../Models/paymentModel');
 const catchAsync = require('../utils/catchAsync');
-const user = require('../Models/userModel');
+const User = require('../Models/userModel');
 const appError = require('../utils/appError');
 //For properties
 exports.getAllProperties = factory.getAll(Property);
@@ -33,7 +33,7 @@ exports.approvePayment = catchAsync(
       return next(new Error('Payment not found', 404));
     const userId = payment.userId;
     const amount = payment.amount;
-    const userToUpdate = await user.findByIdAndUpdate(
+    const userToUpdate = await User.findByIdAndUpdate(
       userId,
       { $inc: { balance: amount } },
       { new: true, runValidators: true },
@@ -46,7 +46,7 @@ exports.approvePayment = catchAsync(
         payment,
       },
     });
-    //send notification to the user to let hem know that the payment has been approved
+    //send notification to the User to let hem know that the payment has been approved
   },
 );
 exports.declinePayment = catchAsync(
@@ -64,14 +64,14 @@ exports.declinePayment = catchAsync(
         payment,
       },
     });
-    //send notification to the user to let him know that the payment has been declined
+    //send notification to the User to let him know that the payment has been declined
   },
 );
 
 //For Dashboard (Reports)
-exports.getAllUsers = factory.getAll(user);
+exports.getAllUsers = factory.getAll(User);
 
-exports.getUserById = factory.getOne(user);
+exports.getUserById = factory.getOne(User);
 
 exports.getPropPrices = catchAsync(
   async (req, res, next) => {
@@ -85,3 +85,41 @@ exports.getPropPrices = catchAsync(
     });
   },
 );
+//there is still getting all the users invested on a certain property waiting for the investments collection to be created
+
+//for Users
+exports.banUser = catchAsync(async (req, res, next) => {
+  const user = await User.findByIdAndUpdate(
+    req.params.id,
+    { activity: 'Banned' },
+    { new: true, runValidators: true },
+  );
+  if (!user)
+    return next(new Error('User not found', 404));
+  res.status(200).json({
+    status:'success',
+    data: {
+      user,
+    },
+  });
+  //send notification to the User to let him know that he has been banned
+  //banned user can't login again until contacting the support team
+})
+
+exports.unbanUser = catchAsync(async (req, res, next) => {
+  const user = await User.findByIdAndUpdate(
+    req.params.id,
+    { activity: 'active' },
+    { new: true, runValidators: true },
+  );
+  if (!user)
+    return next(new Error('User not found', 404));
+  res.status(200).json({
+    status:'success',
+    data: {
+      user,
+    },
+  });
+  //send notification to the User to let him know that he has been unbanned and can now login again
+  //active user can login again
+})
