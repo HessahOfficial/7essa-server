@@ -2,6 +2,8 @@ const factory = require('./handlerFactory');
 const Property = require('../Models/propertyModel');
 const Payment = require('../Models/paymentModel');
 const catchAsync = require('../utils/catchAsync');
+const user = require('../Models/userModel');
+const appError = require('../utils/appError');
 //For properties
 exports.getAllProperties = factory.getAll(Property);
 
@@ -29,6 +31,15 @@ exports.approvePayment = catchAsync(
     );
     if (!payment)
       return next(new Error('Payment not found', 404));
+    const userId = payment.userId;
+    const amount = payment.amount;
+    const userToUpdate = await user.findByIdAndUpdate(
+      userId,
+      { $inc: { balance: amount } },
+      { new: true, runValidators: true },
+    );
+    if (!userToUpdate)
+      return next(new Error('User not found', 404));
     res.status(200).json({
       status: 'success',
       data: {

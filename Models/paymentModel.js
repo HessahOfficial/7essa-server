@@ -22,7 +22,7 @@ const paymentSchema = new mongoose.Schema({
   },
   paymentStatus: {
     type: String,
-    required: [true, 'payment status is required'],
+    default: 'pending', // initial status is pending until the payment is processed by the bank or payment gateway.
     enum: ['pending', 'paid', 'declined'],
   },
   paymentDate: {
