@@ -67,3 +67,21 @@ exports.declinePayment = catchAsync(
     //send notification to the user to let him know that the payment has been declined
   },
 );
+
+//For Dashboard (Reports)
+exports.getAllUsers = factory.getAll(user);
+
+exports.getUserById = factory.getOne(user);
+
+exports.getPropPrices = catchAsync(
+  async (req, res, next) => {
+    const property = await Property.findById(req.params.id);
+    const price = await property.price
+    res.status(200).json({
+      status:'success',
+      data: {
+       price,
+      },
+    });
+  },
+);

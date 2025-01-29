@@ -31,4 +31,8 @@ router
   .route('/payments/decline/:id')
   .patch(adminController.declinePayment);
 
+  //Dashboard(Reports)
+  router.route('/dashboard/Users').get(adminController.getAllUsers);
+  router.route('/dashboard/Users/:id').get(adminController.getUserById);  
+  router.route('/dashboard/property/:id/prices').get(adminController.getPropPrices);
 module.exports = router;
