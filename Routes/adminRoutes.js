@@ -35,4 +35,8 @@ router
   router.route('/dashboard/Users').get(adminController.getAllUsers);
   router.route('/dashboard/Users/:id').get(adminController.getUserById);  
   router.route('/dashboard/property/:id/prices').get(adminController.getPropPrices);
+
+  //for Users
+  router.route('/users/ban/:id').patch(adminController.banUser);
+  router.route('/users/unban/:id').patch(adminController.unbanUser);
 module.exports = router;
