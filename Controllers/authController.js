@@ -1,7 +1,6 @@
 const bcrypt = require('bcryptjs');
 const passport = require('passport');
 const session = require('express-session');
-require('../Config/passport');
 
 const User = require('../Models/userModel');
 const Token = require('../Models/tokenModel');
@@ -71,23 +70,38 @@ exports.signup = async (req, res) => {
 exports.signin = async (req, res) => {
   const { email, password } = req.body;
 
+  if (!email || !password) {
+    return res
+      .status(400)
+      .json({ message: 'Email and password are required' });
+  }
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select(
+      '+password',
+    );
+
     if (!user) {
       return res
         .status(400)
         .json({ message: 'Invalid credentials' });
+    }
+    if (!user.password) {
+      return res
+        .status(400)
+        .json({ message: 'Invalid user data' });
     }
 
     const isPasswordCorrect = await bcrypt.compare(
       password,
       user.password,
     );
+
     if (!isPasswordCorrect) {
       return res
         .status(400)
         .json({ message: 'Invalid credentials' });
     }
+
     let tokenInDb = await Token.findOne({
       userId: user._id,
     });
@@ -98,6 +112,12 @@ exports.signin = async (req, res) => {
 
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
+
+    if (!accessToken || !refreshToken) {
+      return res
+        .status(500)
+        .json({ message: 'Token generation failed' });
+    }
 
     const newToken = new Token({
       userId: user._id,
@@ -112,10 +132,10 @@ exports.signin = async (req, res) => {
       refreshToken,
     });
   } catch (error) {
-    console.error(error.message);
+    console.error('Error during sign-in:', error.message);
     res
       .status(500)
-      .json({ message: `Server error ${error.message}` });
+      .json({ message: `Server error: ${error.message}` });
   }
 };
 
@@ -144,10 +164,8 @@ exports.refreshToken = async (req, res) => {
       });
     }
 
-    // Step 3: Find the token in the database
-
     const tokenInDb = await Token.findOne({
-      userId: decoded.id, // or decoded.userId if the decoded token has that field
+      userId: decoded.id,
       refreshToken,
     });
 
@@ -160,7 +178,6 @@ exports.refreshToken = async (req, res) => {
 
     console.log('Token found in database:', tokenInDb);
 
-    // Step 4: Generate new access token
     const newAccessToken = generateAccessToken(
       decoded.userId,
     );
@@ -169,7 +186,6 @@ exports.refreshToken = async (req, res) => {
       newAccessToken,
     );
 
-    // Step 5: Return the new access token
     res.json({ newAccessToken });
   } catch (error) {
     console.error('Error in refresh token process:', error);
@@ -197,19 +213,50 @@ exports.logout = async (req, res) => {
   }
 };
 
-// Controller function to initiate Google OAuth flow
+// Initiates Google OAuth
 exports.googleAuth = passport.authenticate('google', {
-  scope: ['profile', 'email'], // Define the data you're requesting from Google
+  scope: ['profile', 'email'],
 });
 
-// Controller function to handle the Google callback
-(exports.googleAuthCallback = passport.authenticate(
-  'google',
-  {
-    failureRedirect: '/',
-  },
-)),
-  (req, res) => {
-    // Successfully authenticated
-    res.send('You are logged in with Google!');
-  };
+exports.googleAuthCallback = async (req, res, next) => {
+  passport.authenticate(
+    'google',
+    { failureRedirect: '/' },
+    async (err, user, info) => {
+      if (err) {
+        console.error('Google Auth Error:', err);
+        return next(err);
+      }
+      if (!user) {
+        return res.redirect('/');
+      }
+
+      req.logIn(user, async (err) => {
+        if (err) {
+          console.error('Login Error:', err);
+          return next(err);
+        }
+
+        const tokenInDb = await Token.findOne({
+          userId: user._id,
+        });
+        if (tokenInDb) {
+          await Token.deleteOne({ userId: user._id });
+        }
+
+        const accessToken = generateAccessToken(user._id);
+        const refreshToken = generateRefreshToken(user._id);
+        newToken = new Token({
+          userId: user._id,
+          refreshToken,
+        });
+        await newToken.save();
+        res.json({
+          message: 'Google Auth successful',
+          accessToken,
+          refreshToken,
+        });
+      });
+    },
+  )(req, res, next);
+};
