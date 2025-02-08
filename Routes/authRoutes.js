@@ -6,6 +6,9 @@ const {
   logout,
   googleAuth,
   googleAuthCallback,
+  forgetPassword,
+  ResetPassword,
+  validateResetToken,
 } = require('../Controllers/authController');
 const {
   verifyRefreshTokenInDb,
@@ -22,10 +25,17 @@ router.post(
   verifyRefreshTokenInDb,
   refreshToken,
 );
+
 router.get('/google', googleAuth);
 
 router.get('/google/callback', googleAuthCallback);
 
 router.post('/logout', logout);
+
+router.post('/forgot-password', forgetPassword);
+
+router.get('/reset-password', validateResetToken);
+
+router.post('/reset-password', ResetPassword);
 
 module.exports = router;

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 
 const userSchema = new mongoose.Schema(
   {
@@ -15,7 +16,8 @@ const userSchema = new mongoose.Schema(
       select: false,
     },
     role: { type: String, default: 'user' },
-    activity: { type: String,
+    activity: {
+      type: String,
       default: 'active',
       enum: ['active', 'inactive', 'Banned'],
     },
@@ -29,7 +31,6 @@ const userSchema = new mongoose.Schema(
     balance: { type: Number, default: 0 },
     passwordResetToken: String,
     passwordResetExpires: Date,
-    passwordChangedAt: Date,
   },
   { timestamps: true },
 );
