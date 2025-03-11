@@ -1,8 +1,60 @@
+const jwt = require('jsonwebtoken');
 const Token = require('../Models/tokenModel');
-exports.verifyRefreshTokenInDb = async (req, res, next) => {
+
+const authenticateAccessToken = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.split(' ')[1];
+
+  if (!token) {
+    return res
+      .status(401)
+      .json({ error: 'Access token required' });
+  }
+
+  jwt.verify(
+    token,
+    process.env.JWT_SECRET_ACCESS,
+    (err, user) => {
+      if (err) {
+        return res.status(403).json({
+          error: 'Invalid or expired access token',
+        });
+      }
+      req.user = user;
+      next();
+    },
+  );
+};
+
+const authenticateRefreshToken = (req, res, next) => {
+  const { token: refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res
+      .status(401)
+      .json({ error: 'Refresh token required' });
+  }
+
+  jwt.verify(
+    refreshToken,
+    process.env.JWT_SECRET_REFRESH,
+    (err, user) => {
+      if (err) {
+        return res.status(403).json({
+          error: 'Invalid or expired refresh token',
+        });
+      }
+      req.user = user;
+      next();
+    },
+  );
+};
+
+// Verify refresh token exists in database
+const verifyRefreshTokenInDb = async (req, res, next) => {
   let refreshToken =
     req.body.refreshToken ||
-    req.headers['authorization']?.split(' ')[1]; // look for token in body or headers
+    req.headers['authorization']?.split(' ')[1];
 
   if (!refreshToken) {
     return res
@@ -11,7 +63,7 @@ exports.verifyRefreshTokenInDb = async (req, res, next) => {
   }
 
   try {
-    // Check if the refresh token exists in DB
+    // Check if token exists in the database
     const tokenInDb = await Token.findOne({ refreshToken });
     if (!tokenInDb) {
       return res.status(403).json({
@@ -19,10 +71,16 @@ exports.verifyRefreshTokenInDb = async (req, res, next) => {
       });
     }
 
-    // Proceed to the next middleware
     next();
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
+};
+
+// Export all middlewares
+module.exports = {
+  authenticateAccessToken,
+  authenticateRefreshToken,
+  verifyRefreshTokenInDb,
 };

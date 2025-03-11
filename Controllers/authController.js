@@ -42,8 +42,15 @@ exports.signup = async (req, res) => {
 
     await newUser.save({ session });
 
-    const accessToken = generateAccessToken(newUser._id);
-    const refreshToken = generateRefreshToken(newUser._id);
+    const accessToken = generateAccessToken(
+      newUser._id,
+      newUser.role,
+    );
+    const refreshToken = generateRefreshToken(
+      newUser._id,
+      newUser._id,
+      newUser.role,
+    );
 
     const newToken = new Token({
       userId: newUser._id,
@@ -54,17 +61,21 @@ exports.signup = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
     res.status(201).json({
-      message: 'Sign up successful',
-      accessToken,
-      refreshToken,
+      status: 'success',
+      data: {
+        message: 'Sign up successful',
+        accessToken,
+        refreshToken,
+      },
     });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
     console.error(error);
-    res
-      .status(500)
-      .json({ message: `Server error ${error.message}` });
+    res.status(500).json({
+      status: 'error',
+      message: `Server error ${error.message}`,
+    });
   }
 };
 
@@ -74,7 +85,10 @@ exports.signin = async (req, res) => {
   if (!email || !password) {
     return res
       .status(400)
-      .json({ message: 'Email and password are required' });
+      .json(
+        { message: 'Email and password are required' },
+        { data: null },
+      );
   }
   try {
     const user = await User.findOne({ email }).select(
@@ -84,12 +98,18 @@ exports.signin = async (req, res) => {
     if (!user) {
       return res
         .status(400)
-        .json({ message: 'Invalid credentials' });
+        .json(
+          { message: 'Invalid credentials' },
+          { data: null },
+        );
     }
     if (!user.password) {
       return res
         .status(400)
-        .json({ message: 'Invalid user data' });
+        .json(
+          { message: 'Invalid user data' },
+          { data: null },
+        );
     }
 
     const isPasswordCorrect = await bcrypt.compare(
@@ -100,7 +120,10 @@ exports.signin = async (req, res) => {
     if (!isPasswordCorrect) {
       return res
         .status(400)
-        .json({ message: 'Invalid credentials' });
+        .json(
+          { message: 'Invalid credentials' },
+          { data: null },
+        );
     }
 
     let tokenInDb = await Token.findOne({
@@ -111,13 +134,20 @@ exports.signin = async (req, res) => {
       await Token.deleteOne({ userId: user._id });
     }
 
-    const accessToken = generateAccessToken(user._id);
-    const refreshToken = generateRefreshToken(user._id);
+    const accessToken = generateAccessToken(
+      user._id,
+      user.role,
+    );
+    const refreshToken = generateRefreshToken(
+      user._id,
+      user.role,
+    );
 
     if (!accessToken || !refreshToken) {
-      return res
-        .status(500)
-        .json({ message: 'Token generation failed' });
+      return res.status(500).json({
+        message: 'Token generation failed',
+        data: null,
+      });
     }
 
     const newToken = new Token({
@@ -128,15 +158,19 @@ exports.signin = async (req, res) => {
     await newToken.save();
 
     res.json({
-      message: 'Sign in successful',
-      accessToken,
-      refreshToken,
+      status: 'success',
+      data: {
+        message: 'Sign in successful',
+        accessToken,
+        refreshToken,
+      },
     });
   } catch (error) {
     console.error('Error during sign-in:', error.message);
-    res
-      .status(500)
-      .json({ message: `Server error: ${error.message}` });
+    res.status(500).json({
+      status: 'error',
+      message: `Server error: ${error.message}`,
+    });
   }
 };
 
@@ -167,6 +201,7 @@ exports.refreshToken = async (req, res) => {
 
     const tokenInDb = await Token.findOne({
       userId: decoded.id,
+      role: decoded.role,
       refreshToken,
     });
 
@@ -181,19 +216,26 @@ exports.refreshToken = async (req, res) => {
 
     const newAccessToken = generateAccessToken(
       decoded.userId,
+      decoded.role,
     );
     console.log(
       'New access token generated:',
       newAccessToken,
     );
 
-    res.json({ newAccessToken });
+    res.json({
+      status: 'success',
+      data: {
+        newAccessToken,
+      },
+    });
   } catch (error) {
     console.error('Error in refresh token process:', error);
     res.status(500).json({
+      status: 'error',
       message:
         'An unexpected error occurred while processing the refresh token',
-      error: error.message,
+      data: error.message,
     });
   }
 };
@@ -207,10 +249,18 @@ exports.logout = async (req, res) => {
         .json({ message: 'Refresh token required' });
     await Token.deleteOne({ refreshToken });
 
-    res.json({ message: 'Logged out successfully' });
+    res.json({
+      status: 'success',
+      data: {
+        message: 'Logged out successfully',
+      },
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({
+      status: 'error',
+      message: 'Server error',
+    });
   }
 };
 
@@ -245,17 +295,27 @@ exports.googleAuthCallback = async (req, res, next) => {
           await Token.deleteOne({ userId: user._id });
         }
 
-        const accessToken = generateAccessToken(user._id);
-        const refreshToken = generateRefreshToken(user._id);
+        const accessToken = generateAccessToken(
+          user._id,
+          user.role,
+        );
+        const refreshToken = generateRefreshToken(
+          user._id,
+          user.role,
+        );
         newToken = new Token({
           userId: user._id,
+          role: user.role,
           refreshToken,
         });
         await newToken.save();
         res.json({
-          message: 'Google Auth successful',
-          accessToken,
-          refreshToken,
+          status: 'success',
+          data: {
+            message: 'Google Auth successful',
+            accessToken,
+            refreshToken,
+          },
         });
       });
     },
@@ -275,7 +335,7 @@ exports.forgetPassword = async (req, res) => {
 
     const resetToken = user.createResetToken();
     await user.save({ validateBeforeSave: false });
-    const resetURL = `${process.env.HOST_URL}/reset-password?token=${resetToken}`;
+    const resetURL = `${process.env.HOST_URL}/auth/reset-password?token=${resetToken}`;
 
     const resetEmailContent = `
   <html>
@@ -358,12 +418,16 @@ exports.forgetPassword = async (req, res) => {
     });
 
     return res.status(200).json({
-      message: 'email has been sent successfully',
+      status: 'success',
+      data: {
+        message: 'Email has been sent successfully',
+      },
     });
   } catch (err) {
     console.error('Error sending email:', err);
 
     return res.status(500).json({
+      status: 'error',
       message:
         'There was an error sending the email. Try again later.',
     });
@@ -410,22 +474,32 @@ exports.ResetPassword = async (req, res) => {
       await Token.deleteOne({ userId: user._id });
     }
 
-    const accessToken = generateAccessToken(user._id);
-    const refreshToken = generateRefreshToken(user._id);
+    const accessToken = generateAccessToken(
+      user._id,
+      user.role,
+    );
+    const refreshToken = generateRefreshToken(
+      user._id,
+      user.role,
+    );
     newToken = new Token({
       userId: user._id,
       refreshToken,
     });
     await newToken.save();
     res.json({
-      message: 'Password reset successfully',
-      accessToken,
-      refreshToken,
+      status: 'success',
+      data: {
+        message: 'Password reset successfully',
+        accessToken,
+        refreshToken,
+      },
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: 'Internal Server Error' });
+    res.status(500).json({
+      status: 'error',
+      message: 'Internal Server Error',
+    });
   }
 };
 
@@ -456,12 +530,16 @@ exports.validateResetToken = async (req, res) => {
     }
 
     return res.status(200).json({
-      message:
-        'Token is valid. You can reset your password.',
+      status: 'success',
+      data: {
+        message:
+          'Token is valid. You can reset your password.',
+      },
     });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ error: 'Internal Server Error.' });
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal Server Error.',
+    });
   }
 };
