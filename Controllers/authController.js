@@ -19,7 +19,7 @@ const {
 exports.signup = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
-  const { name, email, password, phoneNumber } = req.body;
+  const { name, email, password, phoneNumber , role } = req.body;
 
   try {
     const existingUser = await User.findOne({
@@ -38,23 +38,21 @@ exports.signup = async (req, res) => {
       email,
       password: hashedPassword,
       phoneNumber,
+      role : role || 'user',
     });
-
-    await newUser.save({ session });
-
+      await newUser.save({ session });
     const accessToken = generateAccessToken(
       newUser._id,
       newUser.role,
     );
     const refreshToken = generateRefreshToken(
       newUser._id,
-      newUser._id,
       newUser.role,
     );
-
     const newToken = new Token({
       userId: newUser._id,
       refreshToken,
+      role: newUser.role,
     });
 
     await newToken.save({ session });
