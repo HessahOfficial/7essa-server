@@ -50,7 +50,6 @@ const authenticateRefreshToken = (req, res, next) => {
   );
 };
 
-// Verify refresh token exists in database
 const verifyRefreshTokenInDb = async (req, res, next) => {
   let refreshToken =
     req.body.refreshToken ||
@@ -78,7 +77,6 @@ const verifyRefreshTokenInDb = async (req, res, next) => {
   }
 };
 
-// Export all middlewares
 module.exports = {
   authenticateAccessToken,
   authenticateRefreshToken,

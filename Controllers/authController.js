@@ -262,11 +262,9 @@ exports.logout = async (req, res) => {
   }
 };
 
-// Initiates Google OAuth
 exports.googleAuth = passport.authenticate('google', {
   scope: ['profile', 'email'],
 });
-
 exports.googleAuthCallback = async (req, res, next) => {
   passport.authenticate(
     'google',

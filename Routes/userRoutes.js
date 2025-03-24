@@ -1,0 +1,32 @@
+const express = require('express');
+
+const router = express.Router();
+const { upload } = require('../Config/cloudinaryConfig');
+const {
+    updateUser,
+    deleteUser,
+    getUserFavourites,
+    addUserFavourites,
+    deleteUserFavourites,
+    addImage
+} = require('../Controllers/userController');
+const { authenticateAccessToken } = require('../Middlewares/authMiddleware');
+
+router.get('/:id/favourites', getUserFavourites);
+router.post('/:id/favourites/:PropertyId', addUserFavourites);
+router.delete('/:id/favourites/:PropertyId', deleteUserFavourites);
+
+
+router.patch(
+    '/update-image/:id',
+    upload.single('photo'),
+    addImage,
+);
+router.patch(
+    '/updateUser/:id',
+    authenticateAccessToken,
+    updateUser,
+);
+
+router.delete('/:id', authenticateAccessToken, deleteUser);
+module.exports = router;   
