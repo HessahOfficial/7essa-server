@@ -1,12 +1,11 @@
 const mongoose = require('mongoose');
 
 const investmentSchema = new mongoose.Schema({
-  userId: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-    },
-  ],
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+
   propertyId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Property',
@@ -25,32 +24,37 @@ const investmentSchema = new mongoose.Schema({
     default: Date.now,
     required: [true, 'investment date is required'],
   },
-  rentalIncome: {
-    type: Number,
-    required: [true, 'rental income is required'],
-  },
+
   annualReturns: {
+    default: 0,
     type: Number,
-    required: [true, 'annual returns are required'],
+  },
+  monthlyReturns: {
+    default: 0,
+    type: Number,
   },
   //ALL the money he got from the investment (+) only
   totalReturns: {
     type: Number,
-    required: [true, 'total returns are required'],
+    default: 0,
   },
   netGains: {
     type: Number,
-    required: [true, 'net gains are required'],
   },
+  SharePrice: {
+    type: Number,
+    required: [true, 'price per share is required'],
+  },
+  
   totalSharesPersantage: {
     type: Number,
-    required: [true, 'total shares persantage is required'],
   },
   investmentAmount: {
     type: Number,
     required: [true, 'investment amount is required'],
   },
 });
+
 const Investment = mongoose.model(
   'Investment',
   investmentSchema,
