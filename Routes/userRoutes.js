@@ -8,7 +8,9 @@ const {
     getUserFavourites,
     addUserFavourites,
     deleteUserFavourites,
-    addImage
+    addImage,
+    sendPushNotificationToAll,
+    sendPushNotificationToUser
 } = require('../Controllers/userController');
 const { authenticateAccessToken } = require('../Middlewares/authMiddleware');
 
@@ -29,4 +31,7 @@ router.patch(
 );
 
 router.delete('/:id', authenticateAccessToken, deleteUser);
+router.post("/notifyAll", sendPushNotificationToAll);
+router.post("/notifyUser", sendPushNotificationToUser);
+
 module.exports = router;   
