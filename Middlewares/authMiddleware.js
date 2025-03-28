@@ -77,9 +77,24 @@ const verifyRefreshTokenInDb = async (req, res, next) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+const isAdmin = (req, res, next) => {
+  if (!req.user || !req.user.role) {
+    return res.status(403).json({ error: 'Unauthorized: No role found' });
+  }
+
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden: Admin access required' });
+  }
+
+  next();
+};
+
+
+
 
 module.exports = {
   authenticateAccessToken,
   authenticateRefreshToken,
   verifyRefreshTokenInDb,
+  isAdmin
 };

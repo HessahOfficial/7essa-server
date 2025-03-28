@@ -67,9 +67,9 @@ const propertySchema = new mongoose.Schema({
   rentalEndDate: {
     type: Date,
   },
-  benfits: {
-    type: Number,
-    required: [true, ''],
+  benefits: {
+    type: [String],
+    required: [true, 'benefits are required'],
   },
   managementCompany: {
     type: String,

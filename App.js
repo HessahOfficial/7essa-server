@@ -7,7 +7,7 @@ const authRouter = require('./Routes/authRoutes');
 const investmentRouter = require('./Routes/investmentRoutes');
 const userRouter = require('./Routes/userRoutes');
 const paymentRouter = require('./Routes/paymentRoutes');
-
+const propertyRouter = require('./Routes/propertyRoutes');
 const app = express();
 
 
@@ -29,6 +29,7 @@ app.use('/auth', authRouter);
 app.use('/investment', investmentRouter);
 app.use("/users", userRouter);
 app.use('/payments', paymentRouter);
+app.use('/properties', propertyRouter);
 
 
 module.exports = app;

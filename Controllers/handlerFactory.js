@@ -59,17 +59,20 @@ exports.createOne = (Model) =>
   });
 exports.getOne = (Model, popOptions) =>
   catchAsync(async (req, res, next) => {
+    if (req.params.id.length !== 24) {
+      res.status(400).json({
+        status: 'fail',
+        message: 'Invalid id',
+      });
+    }
     let query = Model.findById(req.params.id);
     if (popOptions) query = query.populate(popOptions);
     const doc = await query;
-    // Tour.findOne({_id: req.params.id});
     if (!doc) {
-      return next(
-        new AppError(
-          'document not found with that id',
-          404,
-        ),
-      );
+      res.status(404).json({
+        status: 'fail',
+        message: 'No document found with that id',
+      });
     }
 
     res.status(200).json({
