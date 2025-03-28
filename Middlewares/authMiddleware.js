@@ -4,6 +4,7 @@ const Token = require('../Models/tokenModel');
 const authenticateAccessToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
   const token = authHeader?.split(' ')[1];
+  console.log('Received Token:', token); // Debugging
 
   if (!token) {
     return res

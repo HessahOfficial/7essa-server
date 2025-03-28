@@ -19,20 +19,17 @@ const paymentSchema = new mongoose.Schema({
     type: String,
     required: [true, 'currency is required'],
     enum: ['USD', 'EUR', 'EGP'],
+    default: 'EGP',
   },
   paymentStatus: {
     type: String,
-    default: 'pending', // initial status is pending until the payment is processed by the bank or payment gateway.
+    default: 'pending',
     enum: ['pending', 'paid', 'declined'],
   },
   paymentDate: {
     type: Date,
     default: Date.now,
-  },
-  investmentAmount: {
-    type: Number,
-    required: [true, 'investment amount is required'],
-  },
+  }
 });
 
 const Payment = mongoose.model('Payment', paymentSchema);

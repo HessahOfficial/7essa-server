@@ -6,7 +6,10 @@ const adminRouter = require('./Routes/adminRoutes');
 const authRouter = require('./Routes/authRoutes');
 const investmentRouter = require('./Routes/investmentRoutes');
 const userRouter = require('./Routes/userRoutes');
+const paymentRouter = require('./Routes/paymentRoutes');
+
 const app = express();
+
 
 app.use(morgan('dev'));
 app.use(express.json());
@@ -25,5 +28,7 @@ app.use('/admin', adminRouter);
 app.use('/auth', authRouter);
 app.use('/investment', investmentRouter);
 app.use("/users", userRouter);
+app.use('/payments', paymentRouter);
+
 
 module.exports = app;
