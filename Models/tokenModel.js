@@ -6,7 +6,7 @@ const tokenSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
-  role: { type: String, required: true },
+  role: { type: String, required: true , default : 'user' },
   refreshToken: { type: String, required: true },
 });
 

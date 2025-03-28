@@ -4,6 +4,7 @@ const Token = require('../Models/tokenModel');
 const authenticateAccessToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
   const token = authHeader?.split(' ')[1];
+  console.log('Received Token:', token); // Debugging
 
   if (!token) {
     return res
@@ -50,7 +51,6 @@ const authenticateRefreshToken = (req, res, next) => {
   );
 };
 
-// Verify refresh token exists in database
 const verifyRefreshTokenInDb = async (req, res, next) => {
   let refreshToken =
     req.body.refreshToken ||
@@ -77,10 +77,24 @@ const verifyRefreshTokenInDb = async (req, res, next) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+const isAdmin = (req, res, next) => {
+  if (!req.user || !req.user.role) {
+    return res.status(403).json({ error: 'Unauthorized: No role found' });
+  }
 
-// Export all middlewares
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden: Admin access required' });
+  }
+
+  next();
+};
+
+
+
+
 module.exports = {
   authenticateAccessToken,
   authenticateRefreshToken,
   verifyRefreshTokenInDb,
+  isAdmin
 };

@@ -31,6 +31,7 @@ const userSchema = new mongoose.Schema(
     balance: { type: Number, default: 0 },
     passwordResetToken: String,
     passwordResetExpires: Date,
+    favourites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Property' }],
   },
   { timestamps: true },
 );

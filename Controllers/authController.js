@@ -19,7 +19,7 @@ const {
 exports.signup = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
-  const { name, email, password, phoneNumber } = req.body;
+  const { name, email, password, phoneNumber, role } = req.body;
 
   try {
     const existingUser = await User.findOne({
@@ -38,23 +38,21 @@ exports.signup = async (req, res) => {
       email,
       password: hashedPassword,
       phoneNumber,
+      role: role || 'user',
     });
-
     await newUser.save({ session });
-
     const accessToken = generateAccessToken(
       newUser._id,
       newUser.role,
     );
     const refreshToken = generateRefreshToken(
       newUser._id,
-      newUser._id,
       newUser.role,
     );
-
     const newToken = new Token({
       userId: newUser._id,
       refreshToken,
+      role: newUser.role,
     });
 
     await newToken.save({ session });
@@ -108,6 +106,14 @@ exports.signin = async (req, res) => {
         .status(400)
         .json(
           { message: 'Invalid user data' },
+          { data: null },
+        );
+    }
+    if (user.isBanned) {
+      return res
+        .status(400)
+        .json(
+          { message: 'User is banned' },
           { data: null },
         );
     }
@@ -264,11 +270,9 @@ exports.logout = async (req, res) => {
   }
 };
 
-// Initiates Google OAuth
 exports.googleAuth = passport.authenticate('google', {
   scope: ['profile', 'email'],
 });
-
 exports.googleAuthCallback = async (req, res, next) => {
   passport.authenticate(
     'google',

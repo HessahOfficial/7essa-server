@@ -27,7 +27,6 @@ const propertySchema = new mongoose.Schema({
     type: [String],
     required: [true, 'Property must have an image'],
   },
-  //total shares always = 100?
   totalShares: {
     type: Number,
     required: [true, 'total shares is required'],
@@ -43,6 +42,10 @@ const propertySchema = new mongoose.Schema({
   price: {
     type: [Number],
     required: [true, 'Property must have a price'],
+  },
+  pricePerShare: {
+    type: [Number],
+    required: [true, 'price per share is required'],
   },
   estimatedExitDate: {
     type: Date,
@@ -64,9 +67,9 @@ const propertySchema = new mongoose.Schema({
   rentalEndDate: {
     type: Date,
   },
-  benfits: {
-    type: Number,
-    required: [true, ''],
+  benefits: {
+    type: [String],
+    required: [true, 'benefits are required'],
   },
   managementCompany: {
     type: String,

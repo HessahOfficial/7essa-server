@@ -9,7 +9,93 @@ exports.getAllProperties = factory.getAll(Property);
 
 exports.getPropertyById = factory.getOne(Property);
 
-exports.createProperty = factory.createOne(Property);
+exports.createProperty = catchAsync(async (req, res) => {
+  const {
+    title,
+    description,
+    city,
+    locationLink,
+    size,
+    numOfRooms,
+    images,
+    totalShares,
+    availableShares,
+    yearlyPayment,
+    price,
+    pricePerShare,
+    estimatedExitDate,
+    isRented,
+    rentalIncome,
+    rentalName,
+    rentalStartDate,
+    rentalEndDate,
+    benefits,
+    managementCompany,
+    status,
+    investmentDocs
+  } = req.body;
+
+  const requiredFields = [
+    'title', 'description', 'city', 'size', 'numOfRooms', 'images', 'totalShares',
+    'availableShares', 'price', 'pricePerShare', 'benefits', 'status', 'investmentDocs'
+  ];
+
+  const missingFields = requiredFields.filter(field => !req.body[field]);
+
+  if (missingFields.length > 0) {
+    return res.status(400).json({
+      status: 'fail',
+      message: `Missing required fields: ${missingFields.join(', ')}`,
+    });
+  }
+
+  if (size <= 0 || numOfRooms <= 0 || totalShares <= 0 || availableShares < 0 || yearlyPayment <= 0 || benefits < 0) {
+    return res.status(400).json({
+      status: 'fail',
+      message: 'Numeric values must be positive',
+    });
+  }
+
+  const validStatuses = ['Available', 'Funded', 'Exited'];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({
+      status: 'fail',
+      message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
+    });
+  }
+
+  const newProperty = new Property({
+    title,
+    description,
+    city,
+    locationLink,
+    size,
+    numOfRooms,
+    images,
+    totalShares,
+    availableShares,
+    yearlyPayment,
+    price,
+    pricePerShare,
+    estimatedExitDate,
+    isRented: isRented || false,
+    rentalIncome,
+    rentalName,
+    rentalStartDate,
+    rentalEndDate,
+    benefits,
+    managementCompany,
+    status,
+    investmentDocs
+  });
+
+  await newProperty.save();
+  res.status(201).json({
+    status: 'success',
+    data: newProperty
+  });
+});
+
 
 exports.updateProperty = factory.UpdateOne(Property);
 
@@ -78,9 +164,9 @@ exports.getPropPrices = catchAsync(
     const property = await Property.findById(req.params.id);
     const price = await property.price
     res.status(200).json({
-      status:'success',
+      status: 'success',
       data: {
-       price,
+        price,
       },
     });
   },
@@ -97,7 +183,7 @@ exports.banUser = catchAsync(async (req, res, next) => {
   if (!user)
     return next(new Error('User not found', 404));
   res.status(200).json({
-    status:'success',
+    status: 'success',
     data: {
       user,
     },
@@ -115,7 +201,7 @@ exports.unbanUser = catchAsync(async (req, res, next) => {
   if (!user)
     return next(new Error('User not found', 404));
   res.status(200).json({
-    status:'success',
+    status: 'success',
     data: {
       user,
     },
