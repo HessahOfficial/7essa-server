@@ -9,7 +9,7 @@ const authenticateAccessToken = (req, res, next) => {
   if (!token) {
     return res
       .status(401)
-      .json({ error: 'Access token required' });
+      .json({ status: 'fail', message: 'Access token required' });
   }
 
   jwt.verify(
@@ -18,7 +18,8 @@ const authenticateAccessToken = (req, res, next) => {
     (err, user) => {
       if (err) {
         return res.status(403).json({
-          error: 'Invalid or expired access token',
+          status: 'fail',
+          message: 'Invalid or expired access token',
         });
       }
       req.user = user;
@@ -33,7 +34,7 @@ const authenticateRefreshToken = (req, res, next) => {
   if (!refreshToken) {
     return res
       .status(401)
-      .json({ error: 'Refresh token required' });
+      .json({ status: 'fail', message: 'Refresh token required' });
   }
 
   jwt.verify(
@@ -42,7 +43,8 @@ const authenticateRefreshToken = (req, res, next) => {
     (err, user) => {
       if (err) {
         return res.status(403).json({
-          error: 'Invalid or expired refresh token',
+          status: 'fail',
+          message: 'Invalid or expired refresh token',
         });
       }
       req.user = user;
@@ -59,14 +61,14 @@ const verifyRefreshTokenInDb = async (req, res, next) => {
   if (!refreshToken) {
     return res
       .status(400)
-      .json({ message: 'Refresh token required' });
+      .json({ status: 'fail', message: 'Refresh token required' });
   }
 
   try {
-    // Check if token exists in the database
     const tokenInDb = await Token.findOne({ refreshToken });
     if (!tokenInDb) {
       return res.status(403).json({
+        status: 'fail',
         message: 'Invalid or expired refresh token',
       });
     }
@@ -74,27 +76,32 @@ const verifyRefreshTokenInDb = async (req, res, next) => {
     next();
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ status: 'fail', message: 'Server error' });
   }
 };
-const isAdmin = (req, res, next) => {
-  if (!req.user || !req.user.role) {
-    return res.status(403).json({ error: 'Unauthorized: No role found' });
-  }
 
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Forbidden: Admin access required' });
-  }
+const allowedTo = (...roles) => {
 
-  next();
+  return (req, res, next) => {
+    console.log('User:', req.user);
+    if (!req.user?.role) {
+      return res.status(403).json({ status: 'fail', message: 'Unauthorized: No role found' });
+    }
+
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        status: 'fail',
+        message: `Forbidden: Access requires one of the following roles: ${roles.join(', ')} and you are ${req.user.role}`,
+      });
+    }
+
+    next();
+  };
 };
-
-
-
 
 module.exports = {
   authenticateAccessToken,
   authenticateRefreshToken,
   verifyRefreshTokenInDb,
-  isAdmin
+  allowedTo
 };

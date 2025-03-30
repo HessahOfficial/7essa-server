@@ -11,7 +11,7 @@ const {
   validateResetToken,
 } = require('../Controllers/authController');
 const {
-  verifyRefreshTokenInDb,
+  verifyRefreshTokenInDb, allowedTo
 } = require('../Middlewares/authMiddleware');
 
 const router = express.Router();

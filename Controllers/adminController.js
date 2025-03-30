@@ -34,7 +34,10 @@ exports.createProperty = catchAsync(async (req, res) => {
     status,
     investmentDocs
   } = req.body;
-
+  const titleExist = await Property.findOne({ title: title });
+  if (titleExist) {
+    return res.status(400).json({ status: 'fail', message: 'Property Title already exists' });
+  }
   const requiredFields = [
     'title', 'description', 'city', 'size', 'numOfRooms', 'images', 'totalShares',
     'availableShares', 'price', 'pricePerShare', 'benefits', 'status', 'investmentDocs'
@@ -94,7 +97,8 @@ exports.createProperty = catchAsync(async (req, res) => {
     status: 'success',
     data: newProperty
   });
-});
+}
+);
 
 
 exports.updateProperty = factory.UpdateOne(Property);

@@ -8,6 +8,9 @@ const investmentRouter = require('./Routes/investmentRoutes');
 const userRouter = require('./Routes/userRoutes');
 const paymentRouter = require('./Routes/paymentRoutes');
 const propertyRouter = require('./Routes/propertyRoutes');
+const { allowedTo, authenticateAccessToken } = require('./Middlewares/authMiddleware');
+const { userRoles } = require('./utils/constants');
+
 const app = express();
 
 
@@ -24,12 +27,11 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use('/admin', adminRouter);
+app.use('/admin', authenticateAccessToken, allowedTo(userRoles.admin, userRoles.partner), adminRouter);
 app.use('/auth', authRouter);
 app.use('/investment', investmentRouter);
 app.use("/users", userRouter);
 app.use('/payments', paymentRouter);
 app.use('/properties', propertyRouter);
-
 
 module.exports = app;
