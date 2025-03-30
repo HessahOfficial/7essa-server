@@ -6,7 +6,6 @@ const moment = require('moment-timezone');
 
 const egyptTime = moment().tz('Africa/Cairo').format();
 
-
 exports.createPayment = catchAsync(async (req, res) => {
     userId = req.user.id;
     const { amount, paymentMethod } = req.body;
