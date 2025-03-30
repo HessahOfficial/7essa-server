@@ -2,13 +2,11 @@ const Investment = require('../Models/investmentModel');
 const catchAsync = require('../utils/catchAsync');
 const { promisify } = require("util");
 const jwt = require("jsonwebtoken");
-const Property = require('../Models/propertyModel'); // FIXED: Capitalized the import
+const Property = require('../Models/propertyModel');
 const { mongo } = require('mongoose');
 
 exports.makeInvestment = catchAsync(async (req, res) => {
-  const token = req.headers.authorization.split(" ")[1];
-  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET_ACCESS);
-  const userId = decoded.id || decoded.userId;
+  const userId = req.user.id;
   const propertyId = req.params.id;
   const property = await Property.findById(propertyId);
 
@@ -43,10 +41,23 @@ exports.makeInvestment = catchAsync(async (req, res) => {
        investment: investment
     });
   } else {
-    // const numOfShares = req.body.numberOfShares; 
-    // const sharePrice = property.pricePerShare[property.pricePerShare.length - 1];
-    // const returns = property.pricePerShare[property.pricePerShare.length-1]; 
-    //total returns is the number of the property sold 
+     const numOfShares = req.body.numberOfShares; 
+     const sharePrice = property.pricePerShare[property.pricePerShare.length - 1];
+     const netGains = property.priceSold-(sharePrice*numOfShares);
+     const investmentAmount = sharePrice * numOfShares;
+     const totalSharesPercentage = (numOfShares / property.totalShares) * 100;
+     const investment = await Investment.create({
+      userId: userId,
+      propertyId: req.params.id,
+      numOfShares: numOfShares,  
+      SharePrice: sharePrice,
+      netGains: netGains,
+      totalSharesPercentage: totalSharesPercentage,
+      investmentAmount: investmentAmount,      
+  });
+  res.status(201).json({
+    investment: investment
+ });
   }
 });
 
@@ -55,12 +66,19 @@ exports.getInvestmentById = catchAsync(async (req, res) => {
     if (!investment) {
         return res.status(404).json({ message: "Investment not found" });
     }
+    if(req.user.id !== investment.user.id) {
+      return res.status(403).json({ message: "Unauthorized to view this investment" });
+    }
 
     const property = await Property.findById(investment.propertyId);
     if (!property) {
         return res.status(404).json({ message: "Property not found" });
     }
-
+    if(!property.isRented){
+    const updatedNetGains = property.priceSold - (investment.SharePrice * investment.numOfShares);
+    investment.netGains = updatedNetGains;
+    await investment.save();
+    }
     const sharePriceVariationPercentage = ((property.pricePerShare[property.pricePerShare.length - 1] - investment.SharePrice) / 100);
     res.status(200).json({ 
         investment: {
@@ -68,4 +86,19 @@ exports.getInvestmentById = catchAsync(async (req, res) => {
             sharePriceVariationPercentage
         } 
     });
-});
+  });
+
+    exports.getInvestmentProperty = catchAsync(async (req, res) => {
+      const investment = await Investment.findById(req.params.id);
+      if (!investment) {
+        return res.status(404).json({ message: "Investment not found" });
+      }
+      const property = await Property.findById(investment.propertyId);
+      if (!property) {
+        return res.status(404).json({ message: "Property not found" });
+      }
+      res.status(200).json({
+        property: property,
+      });
+    });
+  

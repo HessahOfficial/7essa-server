@@ -71,6 +71,10 @@ const propertySchema = new mongoose.Schema({
     type: [String],
     required: [true, 'benefits are required'],
   },
+  priceSold: {
+    type: Number,
+    default: 0,
+  },
   managementCompany: {
     type: String,
   },
