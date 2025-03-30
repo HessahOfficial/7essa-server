@@ -4,6 +4,9 @@ const Payment = require('../Models/paymentModel');
 const catchAsync = require('../utils/catchAsync');
 const User = require('../Models/userModel');
 const appError = require('../utils/appError');
+const Returns = require("../Models/returnsModel");
+const Investment = require("../Models/investmentModel");
+const mongoose = require("mongoose");
 //For properties
 exports.getAllProperties = factory.getAll(Property);
 
@@ -193,7 +196,7 @@ exports.banUser = catchAsync(async (req, res, next) => {
     },
   });
   //send notification to the User to let him know that he has been banned
-  //banned user can't login again until contacting the support team
+  
 })
 
 exports.unbanUser = catchAsync(async (req, res, next) => {
@@ -211,5 +214,7 @@ exports.unbanUser = catchAsync(async (req, res, next) => {
     },
   });
   //send notification to the User to let him know that he has been unbanned and can now login again
-  //active user can login again
-})
+  
+});
+
+
