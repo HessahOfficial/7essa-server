@@ -1,6 +1,6 @@
 const express = require('express');
 const adminController = require('../Controllers/adminController');
-
+const returnsController = require('../Controllers/returnsController');
 const router = express.Router();
 //properties
 router
@@ -39,4 +39,7 @@ router
   //for Users
   router.route('/users/ban/:id').patch(adminController.banUser);
   router.route('/users/unban/:id').patch(adminController.unbanUser);
+
+  //add payment to the returns 
+  router.route('/payments/:id/returns').post(returnsController.addReturnPayment);
 module.exports = router;
