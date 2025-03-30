@@ -1,10 +1,12 @@
 const express = require('express');
 const investmentController = require('../Controllers/investmentController');
+const authMiddleware = require('../Middlewares/authMiddleware');
 const router = express.Router();
 
 router
   .route('/make-investment/:id')
-  .post(investmentController.makeInvestment);
-  router.route('/getInvestment/:id').get(investmentController.getInvestmentById);
+  .post(authMiddleware.authenticateAccessToken,investmentController.makeInvestment);
+  router.route('/getInvestment/:id').get(authMiddleware.authenticateAccessToken,investmentController.getInvestmentById);
+  router.route('/:id/property').get(authMiddleware.authenticateAccessToken,investmentController.getInvestmentProperty);
 
 module.exports = router;
