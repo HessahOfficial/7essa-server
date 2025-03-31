@@ -214,7 +214,39 @@ exports.unbanUser = catchAsync(async (req, res, next) => {
     },
   });
   //send notification to the User to let him know that he has been unbanned and can now login again
+
+  
   
 });
+// for investments 
+
+exports.getAllInvestments = factory.getAll(Investment);
+
+exports.getAllInvestmentsOnProperty = catchAsync(async (req, res) => {
+  const investments = await Investment.find({ propertyId: req.params.id });
+  
+  if (!investments) {
+    return res.status(404).json({ message: 'Investments not found' });
+  }
+
+  res.status(200).json({
+    status:'success',
+    results: investments.length,
+    data: investments
+  })
+})
+
+exports.getAllUsersInvestedOnProperty= catchAsync(async (req, res) => {
+  const investments = await Investment.find({ propertyId: req.params.id });
+  const users = await User.find({ _id: { $in: investments.map(investment => investment.userId) } });
+  if (!investments ||!users) {
+    return res.status(404).json({ message: 'Investments or Users not found' });
+  }
+  res.status(200).json({
+    status:'success',
+    results: users.length,
+    data: users
+  })
+})
 
 
