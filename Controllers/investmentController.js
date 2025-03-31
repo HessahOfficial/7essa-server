@@ -76,6 +76,8 @@ exports.getInvestmentById = catchAsync(async (req, res) => {
       return res.status(404).json({ message: "Property not found" });
   }
   if(!property.isRented){
+    updatedTotalReturns = (property.priceSold/property.totalShares)*investment.numOfShares;
+    investment.totalReturns = updatedTotalReturns;
     const updatedNetGains = property.priceSold - (investment.SharePrice * investment.numOfShares);
     investment.netGains = updatedNetGains;
     await investment.save();
@@ -111,26 +113,51 @@ exports.getInvestmentById = catchAsync(async (req, res) => {
         property: property,
       });
     });
-    // const calculateTotalReturns = async (investmentId) => {
-    //   const totalReturns = await Returns.aggregate([
-    //     {
-    //       $match: { investmentId: new mongoose.Types.ObjectId(investmentId) }
-    //     },
-    //     {
-    //       $group: {
-    //         _id: null,
-    //         totalAmount: { $sum: "$returnAmount" }
-    //       }
-    //     }
-    //   ]);
-    
-    //   return totalReturns.length > 0 ? totalReturns[0].totalAmount : 0;
-    // };
-   
+
 exports.getAllMyInvestments = catchAsync(async (req, res) => {
   const investments = await Investment.find({ userId: req.user.id });
   res.status(200).json({
     investments: investments,
   });
 });  
+exports.getMyreturnsOnInvestment = catchAsync(async (req, res) => {
+  const investment = await Investment.findById(req.params.id);
+  if (!investment) {
+    return res.status(404).json({ message: "Investment not found" });
+  }
+  if(req.user.id!== investment.userId.toString()) {
+    return res.status(403).json({ message: "Unauthorized to view this investment" });
+  }
+  const property = await Property.findById(investment.propertyId)
+  if (!property) {
+    return res.status(404).json({ message: "Property not found" });
+  }
+  if(!property.isRented){
+    updatedTotalReturns = (property.priceSold/property.totalShares)*investment.numOfShares;
+    investment.totalReturns = updatedTotalReturns;
+    const updatedNetGains = property.priceSold - (investment.SharePrice * investment.numOfShares);
+    investment.netGains = updatedNetGains;
+    await investment.save();
+    res.status(200).json({
+      totalReturns: investment.totalReturns,
+      netGains: investment.netGains,
+      totalSharesPercentage: investment.totalSharesPercentage
+    })
+  }
+  else{
+    const updatedTotalReturns = await common.calculateTotalReturns(investment._id);
+    const updatedNetGains = updatedTotalReturns - investment.SharePrice
+    investment.totalReturns = updatedTotalReturns;
+    investment.netGains = updatedNetGains;
+    await investment.save();
+
+    res.status(200).json({
+      totalReturns: investment.totalReturns,
+      netGains: investment.netGains,
+      monthlyReturns: investment.monthlyReturns,
+      annualReturns: investment.annualReturns,
+      totalSharesPercentage: investment.totalSharesPercentage,
+    })
+  }
+});
   
