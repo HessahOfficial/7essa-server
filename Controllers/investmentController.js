@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const Property = require('../Models/propertyModel');
 const Returns = require("../Models/returnsModel");
 const mongoose = require("mongoose");
+const common = require('../utils/commonMethods');
 
 exports.makeInvestment = catchAsync(async (req, res) => {
   const userId = req.user.id;
@@ -79,7 +80,7 @@ exports.getInvestmentById = catchAsync(async (req, res) => {
     investment.netGains = updatedNetGains;
     await investment.save();
 }else{
-  const updatedTotalReturns = await calculateTotalReturns(investment._id);
+  const updatedTotalReturns = await common.calculateTotalReturns(investment._id);
   const updatedNetGains = updatedTotalReturns - investment.SharePrice
   investment.totalReturns = updatedTotalReturns;
   investment.netGains = updatedNetGains;
@@ -110,21 +111,21 @@ exports.getInvestmentById = catchAsync(async (req, res) => {
         property: property,
       });
     });
-    const calculateTotalReturns = async (investmentId) => {
-      const totalReturns = await Returns.aggregate([
-        {
-          $match: { investmentId: new mongoose.Types.ObjectId(investmentId) }
-        },
-        {
-          $group: {
-            _id: null,
-            totalAmount: { $sum: "$returnAmount" }
-          }
-        }
-      ]);
+    // const calculateTotalReturns = async (investmentId) => {
+    //   const totalReturns = await Returns.aggregate([
+    //     {
+    //       $match: { investmentId: new mongoose.Types.ObjectId(investmentId) }
+    //     },
+    //     {
+    //       $group: {
+    //         _id: null,
+    //         totalAmount: { $sum: "$returnAmount" }
+    //       }
+    //     }
+    //   ]);
     
-      return totalReturns.length > 0 ? totalReturns[0].totalAmount : 0;
-    };
+    //   return totalReturns.length > 0 ? totalReturns[0].totalAmount : 0;
+    // };
    
 exports.getAllMyInvestments = catchAsync(async (req, res) => {
   const investments = await Investment.find({ userId: req.user.id });
