@@ -126,5 +126,10 @@ exports.getInvestmentById = catchAsync(async (req, res) => {
       return totalReturns.length > 0 ? totalReturns[0].totalAmount : 0;
     };
    
-
+exports.getAllMyInvestments = catchAsync(async (req, res) => {
+  const investments = await Investment.find({ userId: req.user.id });
+  res.status(200).json({
+    investments: investments,
+  });
+});  
   

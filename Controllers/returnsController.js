@@ -1,9 +1,11 @@
 const Returns = require("../Models/returnsModel");
 const Investment = require("../Models/investmentModel");
 const catchAsync = require('../utils/catchAsync');
+const mongoose = require('mongoose');
 
 exports.addReturnPayment = catchAsync(async (req, res) => {
-  const { userId, investmentId, paymentId, returnAmount } = req.body;
+  const { userId, investmentId, returnAmount } = req.body;
+  const paymentId = req.params.id;
 
   
   const newReturn = await Returns.create({
@@ -23,3 +25,19 @@ exports.addReturnPayment = catchAsync(async (req, res) => {
     totalReturns: updatedTotalReturns,
   });
 });
+
+ const calculateTotalReturns = async (investmentId) => {
+      const totalReturns = await Returns.aggregate([
+        {
+          $match: { investmentId: new mongoose.Types.ObjectId(investmentId) }
+        },
+        {
+          $group: {
+            _id: null,
+            totalAmount: { $sum: "$returnAmount" }
+          }
+        }
+      ]);
+    
+      return totalReturns.length > 0 ? totalReturns[0].totalAmount : 0;
+    };
