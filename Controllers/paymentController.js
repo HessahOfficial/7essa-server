@@ -4,11 +4,11 @@ const mongoose = require('mongoose');
 const User = require('../Models/userModel');
 const moment = require('moment-timezone');
 
-const egyptTime = moment().tz('Africa/Cairo').format();
+const egyptTime = moment().tz('Africa/Cairo').format('hh:mm A');
 
 exports.createPayment = catchAsync(async (req, res) => {
     userId = req.user.id;
-    const { amount, paymentMethod } = req.body;
+    const { amount, paymentMethod, paymentType } = req.body;
 
     if (!userId || typeof userId !== 'string') {
         return res.status(400).json({ status: 'fail', message: 'User ID is required and must be a string' });
@@ -39,6 +39,7 @@ exports.createPayment = catchAsync(async (req, res) => {
         amount,
         paymentMethod,
         paymentDate: egyptTime,
+        paymentType,
     });
 
     await newPayment.save();
@@ -108,4 +109,38 @@ exports.deletePayment = catchAsync(async (req, res) => {
     await Payment.findByIdAndDelete(paymentId);
 
     res.status(200).json({ status: 'success', data: " Request Deleted Sucessfully" });
+});
+
+
+exports.getDepositHistory = catchAsync(async (req, res) => {
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+        return res.status(404).json({ status: 'fail', message: 'User not found' });
+    }
+    const depositHistory = await Payment.find({ userId, paymentType: 'deposit' });
+    res.status(200).json({
+        status: 'success',
+        data: {
+            depositHistory,
+        },
+    });
+}
+);
+exports.getWithdrawHistory = catchAsync(async (req, res) => {
+
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+        return res.status(404).json({ status: 'fail', message: 'User not found' });
+    }
+    const withdrawHistory = await Payment.find({ userId, paymentType: 'withdraw' });
+    res.status(200).json({
+        status: 'success',
+        data: {
+            withdrawHistory,
+        },
+    });
 });

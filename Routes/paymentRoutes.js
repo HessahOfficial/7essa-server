@@ -2,7 +2,9 @@ const {
     createPayment,
     getPaymentStatus,
     getHistory,
-    deletePayment
+    deletePayment,
+    getDepositHistory,
+    getWithdrawHistory
 } = require('../Controllers/paymentController');
 
 
@@ -16,5 +18,7 @@ router.post('/create', authenticateAccessToken, createPayment);
 router.get('/status/:id', getPaymentStatus);
 router.get('/history/', authenticateAccessToken, getHistory);
 router.delete('/:id', authenticateAccessToken, deletePayment);
+router.get('/getDepositHistory', authenticateAccessToken, getDepositHistory);
+router.get('/getWithdrawHistory', authenticateAccessToken, getWithdrawHistory);
 
 module.exports = router;

@@ -5,6 +5,11 @@ const paymentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   },
+  paymentType: {
+    type: String,
+    required: [true, 'payment type is required'],
+    enum: ['deposit', 'withdraw'],
+  },
 
   amount: {
     type: Number,
@@ -27,8 +32,8 @@ const paymentSchema = new mongoose.Schema({
     enum: ['pending', 'paid', 'declined'],
   },
   paymentDate: {
-    type: Date,
-    default: Date.now,
+    type: String,
+    required: [true, 'payment date is required'],
   }
 });
 
