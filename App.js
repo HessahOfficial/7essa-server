@@ -26,6 +26,10 @@ app.use(
 
 app.use(passport.initialize());
 app.use(passport.session());
+app.get('/', (req, res) => {
+  res.send('Welcome from the server');
+}
+);
 
 app.use('/admin', authenticateAccessToken, allowedTo(userRoles.admin, userRoles.partner), adminRouter);
 app.use('/auth', authRouter);
