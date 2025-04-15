@@ -1,4 +1,3 @@
-const factory = require('./handlerFactory');
 const Property = require('../Models/propertyModel');
 const Payment = require('../Models/paymentModel');
 const catchAsync = require('../utils/catchAsync');
@@ -8,9 +7,32 @@ const Returns = require("../Models/returnsModel");
 const Investment = require("../Models/investmentModel");
 const mongoose = require("mongoose");
 //For properties
-exports.getAllProperties = factory.getAll(Property);
+exports.getAllProperties = catchAsync(async(req,res,next)=>{
+  const properties = await Property.find({});
+  if (!properties) {
+    return next(new appError('No properties found', 404));
+  }
+  res.status(200).json({
+    status:'success',
+    results: properties.length,
+    data: properties
+  })
+})
 
-exports.getPropertyById = factory.getOne(Property);
+
+exports.getPropertyById = catchAsync(async (req, res,next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return next(new appError('Invalid property ID', 400));
+  }
+  const property = await Property.findById(req.params.id);
+  if (!property) {
+    return next (new appError('Property not found', 404));
+  }
+  res.status(200).json({
+    status: 'success',
+    data: property
+  });
+})
 
 exports.createProperty = catchAsync(async (req, res) => {
   const {
@@ -104,16 +126,75 @@ exports.createProperty = catchAsync(async (req, res) => {
 );
 
 
-exports.updateProperty = factory.UpdateOne(Property);
 
-exports.deleteProperty = factory.deleteOne(Property);
+exports.updateProperty = catchAsync(async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return next(new appError('Invalid property ID', 400));
+  }
+  const property = await Property.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    { new: true, runValidators: true },
+  );
+  if (!property) {
+    return next(new appError('Property not found', 404));
+  }
+  res.status(200).json({
+    status: 'success',
+    data: property
+  });
+})
+
+
+exports.deleteProperty = catchAsync(async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return next(new appError('Invalid property ID', 400));
+  }
+  const property = await Property.findByIdAndDelete(req.params.id);
+  if (!property) {
+    return next(new appError('Property not found', 404));
+  }
+  res.status(204).json({
+    status: 'success',
+    data: null
+  });
+})
 
 //for payments
-exports.getAllPayments = factory.getAll(Payment);
 
-exports.getPaymentById = factory.getOne(Payment);
+exports.getAllPayments = catchAsync(async (req, res, next) => {
+  const payments = await Payment.find({});
+  if (!payments) {
+    return next(new appError('No payments found', 404));
+  }
+  res.status(200).json({
+    status:'success',
+    results: payments.length,
+    data: payments
+  })
+})
+
+exports.getPaymentById = catchAsync(async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return next(new appError('Invalid payment ID', 400));
+  }
+  const payment = await Payment.findById(req.params.id);
+  if (!payment) {
+    return next(new appError('Payment not found', 404));
+  }
+  res.status(200).json({
+    status: 'success',
+    data: payment
+  });
+})
 // admin cant create a payment this is just for testing purposes
-exports.createPayment = factory.createOne(Payment);
+exports.createPayment = catchAsync(async (req, res,next) => {
+  const newPayment = await Payment.create(req.body);
+  res.status(201).json({
+    status: 'success',
+    data: newPayment
+  })
+})
 
 exports.approvePayment = catchAsync(
   async (req, res, next) => {
@@ -123,7 +204,7 @@ exports.approvePayment = catchAsync(
       { new: true, runValidators: true },
     );
     if (!payment)
-      return next(new Error('Payment not found', 404));
+      return next(new appError('Payment not found', 404));
     const userId = payment.userId;
     const amount = payment.amount;
     const userToUpdate = await User.findByIdAndUpdate(
@@ -162,13 +243,42 @@ exports.declinePayment = catchAsync(
 );
 
 //For Dashboard (Reports)
-exports.getAllUsers = factory.getAll(User);
+exports.getAllUsers = catchAsync(async (req, res, next) => {
+  const users = await User.find({});
+  if (!users) {
+    return next(new appError('No users found', 404));
+  }
+  res.status(200).json({
+    status:'success',
+    results: users.length,
+    data: users
+  })
+})
 
-exports.getUserById = factory.getOne(User);
+
+exports.getUserById = catchAsync(async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return next(new appError('Invalid user ID', 400));
+  }
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    return next(new appError('User not found', 404));
+  }
+  res.status(200).json({
+    status: 'success',
+    data: user
+  });
+})
 
 exports.getPropPrices = catchAsync(
   async (req, res, next) => {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return next(new appError('Invalid property ID', 400));
+    }
     const property = await Property.findById(req.params.id);
+    if (!property) {
+      return next(new appError('Property not found', 404));
+    }
     const price = await property.price
     res.status(200).json({
       status: 'success',
@@ -178,25 +288,27 @@ exports.getPropPrices = catchAsync(
     });
   },
 );
-//there is still getting all the users invested on a certain property waiting for the investments collection to be created
+
 
 //for Users
 exports.banUser = catchAsync(async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return next(new appError('Invalid user ID', 400));
+  }
   const user = await User.findByIdAndUpdate(
     req.params.id,
     { activity: 'Banned' },
     { new: true, runValidators: true },
   );
   if (!user)
-    return next(new Error('User not found', 404));
+    return next(new appError('User not found', 404));
   res.status(200).json({
     status: 'success',
     data: {
       user,
     },
   });
-  //send notification to the User to let him know that he has been banned
-  
+
 })
 
 exports.unbanUser = catchAsync(async (req, res, next) => {
@@ -213,16 +325,27 @@ exports.unbanUser = catchAsync(async (req, res, next) => {
       user,
     },
   });
-  //send notification to the User to let him know that he has been unbanned and can now login again
-
-  
-  
 });
 // for investments 
 
-exports.getAllInvestments = factory.getAll(Investment);
+
+exports.getAllInvestments = catchAsync(async (req, res, next) => {
+  const investments = await Investment.find({});
+  if (!investments) {
+    return next(new appError('No investments found', 404));
+  }
+  
+  res.status(200).json({
+    status:'success',
+    results: investments.length,
+    data: investments
+  })
+})
 
 exports.getAllInvestmentsOnProperty = catchAsync(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return next(new appError('Invalid property ID', 400));
+  }
   const investments = await Investment.find({ propertyId: req.params.id });
   
   if (!investments) {
@@ -236,11 +359,11 @@ exports.getAllInvestmentsOnProperty = catchAsync(async (req, res) => {
   })
 })
 
-exports.getAllUsersInvestedOnProperty= catchAsync(async (req, res) => {
+exports.getAllUsersInvestedOnProperty= catchAsync(async (req, res,next) => {
   const investments = await Investment.find({ propertyId: req.params.id });
   const users = await User.find({ _id: { $in: investments.map(investment => investment.userId) } });
   if (!investments ||!users) {
-    return res.status(404).json({ message: 'Investments or Users not found' });
+    return next(new appError('No investments or users found', 404));
   }
   res.status(200).json({
     status:'success',
