@@ -1,7 +1,6 @@
 const Returns = require("../Models/returnsModel");
 const Investment = require("../Models/investmentModel");
 const catchAsync = require('../utils/catchAsync');
-const mongoose = require('mongoose');
 const common = require('../utils/commonMethods');
 
 exports.addReturnPayment = catchAsync(async (req, res) => {
