@@ -1,19 +1,18 @@
 const Investment = require('../Models/investmentModel');
 const catchAsync = require('../utils/catchAsync');
-const { promisify } = require("util");
-const jwt = require("jsonwebtoken");
 const Property = require('../Models/propertyModel');
-const Returns = require("../Models/returnsModel");
 const mongoose = require("mongoose");
 const common = require('../utils/commonMethods');
+const appError = require('../utils/appError');
 
-exports.makeInvestment = catchAsync(async (req, res) => {
+
+exports.makeInvestment = catchAsync(async (req, res,next) => {
   const userId = req.user.id;
   const propertyId = req.params.id;
   const property = await Property.findById(propertyId);
 
   if (!property) {
-    return res.status(404).json({ message: "Property not found" });
+    return next(new appError('Property not found', 404));
   }
 
   if (property.isRented) {
@@ -61,13 +60,16 @@ exports.makeInvestment = catchAsync(async (req, res) => {
   }
 });
 
-exports.getInvestmentById = catchAsync(async (req, res) => {
+exports.getInvestmentById = catchAsync(async (req, res,next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return next(new appError('Invalid property ID', 400));
+  }
   const investment = await Investment.findById(req.params.id);
   if (!investment) {
-      return res.status(404).json({ message: "Investment not found" });
+      return next (new AppError('Investment not found', 404));
   }
   if(req.user.id !== investment.userId.toString()) {
-    return res.status(403).json({ message: "Unauthorized to view this investment" });
+    return next(new appError('Unauthorized to view this investment', 403));
   }
 
 
@@ -100,14 +102,17 @@ exports.getInvestmentById = catchAsync(async (req, res) => {
 });
 
 
-    exports.getInvestmentProperty = catchAsync(async (req, res) => {
+    exports.getInvestmentProperty = catchAsync(async (req, res,next) => {
+      if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return next(new appError('Invalid investment ID', 400));
+      }
       const investment = await Investment.findById(req.params.id);
       if (!investment) {
-        return res.status(404).json({ message: "Investment not found" });
+        return next(new appError('Investment not found', 404));
       }
       const property = await Property.findById(investment.propertyId);
       if (!property) {
-        return res.status(404).json({ message: "Property not found" });
+        return next(new appError('Property not found', 404));
       }
       res.status(200).json({
         property: property,
@@ -116,21 +121,24 @@ exports.getInvestmentById = catchAsync(async (req, res) => {
 
 exports.getAllMyInvestments = catchAsync(async (req, res) => {
   const investments = await Investment.find({ userId: req.user.id });
+  if (!investments) {
+    return res.status(404).json({ message: "No investments found" });
+  }
   res.status(200).json({
     investments: investments,
   });
 });  
-exports.getMyreturnsOnInvestment = catchAsync(async (req, res) => {
+exports.getMyreturnsOnInvestment = catchAsync(async (req, res, next) => {
   const investment = await Investment.findById(req.params.id);
   if (!investment) {
-    return res.status(404).json({ message: "Investment not found" });
+    return next(new appError('Investment not found', 404));
   }
   if(req.user.id!== investment.userId.toString()) {
     return res.status(403).json({ message: "Unauthorized to view this investment" });
   }
   const property = await Property.findById(investment.propertyId)
   if (!property) {
-    return res.status(404).json({ message: "Property not found" });
+    return next(new appError('Property not found', 404));
   }
   if(!property.isRented){
     updatedTotalReturns = (property.priceSold/property.totalShares)*investment.numOfShares;
