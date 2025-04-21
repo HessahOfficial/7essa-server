@@ -10,6 +10,7 @@ const paymentRouter = require('./Routes/paymentRoutes');
 const propertyRouter = require('./Routes/propertyRoutes');
 const { allowedTo, authenticateAccessToken } = require('./Middlewares/authMiddleware');
 const { userRoles } = require('./utils/constants');
+const AppError = require('./utils/appError');
 
 const app = express();
 
@@ -38,4 +39,21 @@ app.use("/users", userRouter);
 app.use('/payments', paymentRouter);
 app.use('/properties', propertyRouter);
 
+//global error handler
+app.use((err, req, res, next) => {
+
+  if (err instanceof AppError) {
+    return res.status(err.statusCode).json({
+      status: err.status,
+      message: err.message,
+    });
+  }
+
+
+  console.error('UNEXPECTED ERROR 💥:', err);
+  res.status(500).json({
+    status: 'error',
+    message: 'Something went wrong!',
+  });
+});
 module.exports = app;

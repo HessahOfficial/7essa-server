@@ -6,6 +6,16 @@ class AppError extends Error {
     this.isOperational = true;
     Error.captureStackTrace(this, this.constructor);
   }
+  toJSON() {
+    return {
+      status: this.status,
+      statusCode: this.statusCode,
+      message: this.message
+    };
+  }
 }
+
+
+
 
 module.exports = AppError;
