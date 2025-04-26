@@ -1,5 +1,7 @@
 const express = require('express');
 const morgan = require('morgan');
+const cors = require('cors');
+const corsOptions = require('./Config/corsOptions')
 const passport = require('./Config/passport');
 const session = require('express-session');
 const adminRouter = require('./Routes/adminRoutes');
@@ -14,7 +16,7 @@ const AppError = require('./utils/appError');
 
 const app = express();
 
-
+app.use(cors(corsOptions));
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(
