@@ -10,7 +10,7 @@ const mongoose = require("mongoose");
 exports.getAllProperties = catchAsync(async(req,res,next)=>{
   const properties = await Property.find({});
   if (!properties) {
-    return next(new appError('No properties found', 404));
+    return next(appError('No properties found', 404));
   }
   res.status(200).json({
     status:'success',
@@ -22,11 +22,11 @@ exports.getAllProperties = catchAsync(async(req,res,next)=>{
 
 exports.getPropertyById = catchAsync(async (req, res,next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return next(new appError('Invalid property ID', 400));
+    return next(appError('Invalid property ID', 400));
   }
   const property = await Property.findById(req.params.id);
   if (!property) {
-    return next (new appError('Property not found', 404));
+    return next (appError('Property not found', 404));
   }
   res.status(200).json({
     status: 'success',
@@ -129,7 +129,7 @@ exports.createProperty = catchAsync(async (req, res) => {
 
 exports.updateProperty = catchAsync(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return next(new appError('Invalid property ID', 400));
+    return next(appError('Invalid property ID', 400));
   }
   const property = await Property.findByIdAndUpdate(
     req.params.id,
@@ -137,7 +137,7 @@ exports.updateProperty = catchAsync(async (req, res, next) => {
     { new: true, runValidators: true },
   );
   if (!property) {
-    return next(new appError('Property not found', 404));
+    return next(appError('Property not found', 404));
   }
   res.status(200).json({
     status: 'success',
@@ -148,11 +148,11 @@ exports.updateProperty = catchAsync(async (req, res, next) => {
 
 exports.deleteProperty = catchAsync(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return next(new appError('Invalid property ID', 400));
+    return next(appError('Invalid property ID', 400));
   }
   const property = await Property.findByIdAndDelete(req.params.id);
   if (!property) {
-    return next(new appError('Property not found', 404));
+    return next(appError('Property not found', 404));
   }
   res.status(204).json({
     status: 'success',
@@ -165,7 +165,7 @@ exports.deleteProperty = catchAsync(async (req, res, next) => {
 exports.getAllPayments = catchAsync(async (req, res, next) => {
   const payments = await Payment.find({});
   if (!payments) {
-    return next(new appError('No payments found', 404));
+    return next(appError('No payments found', 404));
   }
   res.status(200).json({
     status:'success',
@@ -176,11 +176,11 @@ exports.getAllPayments = catchAsync(async (req, res, next) => {
 
 exports.getPaymentById = catchAsync(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return next(new appError('Invalid payment ID', 400));
+    return next(appError('Invalid payment ID', 400));
   }
   const payment = await Payment.findById(req.params.id);
   if (!payment) {
-    return next(new appError('Payment not found', 404));
+    return next(appError('Payment not found', 404));
   }
   res.status(200).json({
     status: 'success',
@@ -204,7 +204,7 @@ exports.approvePayment = catchAsync(
       { new: true, runValidators: true },
     );
     if (!payment)
-      return next(new appError('Payment not found', 404));
+      return next(appError('Payment not found', 404));
     const userId = payment.userId;
     const amount = payment.amount;
     const userToUpdate = await User.findByIdAndUpdate(
@@ -246,7 +246,7 @@ exports.declinePayment = catchAsync(
 exports.getAllUsers = catchAsync(async (req, res, next) => {
   const users = await User.find({});
   if (!users) {
-    return next(new appError('No users found', 404));
+    return next(appError('No users found', 404));
   }
   res.status(200).json({
     status:'success',
@@ -258,11 +258,11 @@ exports.getAllUsers = catchAsync(async (req, res, next) => {
 
 exports.getUserById = catchAsync(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return next(new appError('Invalid user ID', 400));
+    return next(appError('Invalid user ID', 400));
   }
   const user = await User.findById(req.params.id);
   if (!user) {
-    return next(new appError('User not found', 404));
+    return next(appError('User not found', 404));
   }
   res.status(200).json({
     status: 'success',
@@ -273,11 +273,11 @@ exports.getUserById = catchAsync(async (req, res, next) => {
 exports.getPropPrices = catchAsync(
   async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return next(new appError('Invalid property ID', 400));
+      return next(appError('Invalid property ID', 400));
     }
     const property = await Property.findById(req.params.id);
     if (!property) {
-      return next(new appError('Property not found', 404));
+      return next(appError('Property not found', 404));
     }
     const price = await property.price
     res.status(200).json({
@@ -293,7 +293,7 @@ exports.getPropPrices = catchAsync(
 //for Users
 exports.banUser = catchAsync(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return next(new appError('Invalid user ID', 400));
+    return next(appError('Invalid user ID', 400));
   }
   const user = await User.findByIdAndUpdate(
     req.params.id,
@@ -301,7 +301,7 @@ exports.banUser = catchAsync(async (req, res, next) => {
     { new: true, runValidators: true },
   );
   if (!user)
-    return next(new appError('User not found', 404));
+    return next(appError('User not found', 404));
   res.status(200).json({
     status: 'success',
     data: {
@@ -332,7 +332,7 @@ exports.unbanUser = catchAsync(async (req, res, next) => {
 exports.getAllInvestments = catchAsync(async (req, res, next) => {
   const investments = await Investment.find({});
   if (!investments) {
-    return next(new appError('No investments found', 404));
+    return next(appError('No investments found', 404));
   }
   
   res.status(200).json({
@@ -344,7 +344,7 @@ exports.getAllInvestments = catchAsync(async (req, res, next) => {
 
 exports.getAllInvestmentsOnProperty = catchAsync(async (req, res) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return next(new appError('Invalid property ID', 400));
+    return next(appError('Invalid property ID', 400));
   }
   const investments = await Investment.find({ propertyId: req.params.id });
   
@@ -363,7 +363,7 @@ exports.getAllUsersInvestedOnProperty= catchAsync(async (req, res,next) => {
   const investments = await Investment.find({ propertyId: req.params.id });
   const users = await User.find({ _id: { $in: investments.map(investment => investment.userId) } });
   if (!investments ||!users) {
-    return next(new appError('No investments or users found', 404));
+    return next(appError('No investments or users found', 404));
   }
   res.status(200).json({
     status:'success',

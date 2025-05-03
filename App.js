@@ -11,8 +11,8 @@ const userRouter = require('./Routes/userRoutes');
 const paymentRouter = require('./Routes/paymentRoutes');
 const propertyRouter = require('./Routes/propertyRoutes');
 const { allowedTo, authenticateAccessToken } = require('./Middlewares/authMiddleware');
-const { userRoles } = require('./utils/constants');
 const AppError = require('./utils/appError');
+const userRoles = require('./utils/constants/userRoles');
 
 const app = express();
 
@@ -34,7 +34,7 @@ app.get('/', (req, res) => {
 }
 );
 
-app.use('/admin', authenticateAccessToken, allowedTo(userRoles.admin, userRoles.partner), adminRouter);
+app.use('/admin', authenticateAccessToken, allowedTo(userRoles.ADMIN), adminRouter);
 app.use('/auth', authRouter);
 app.use('/investment', investmentRouter);
 app.use("/users", userRouter);
@@ -48,11 +48,11 @@ app.use((err, req, res, next) => {
     return res.status(err.statusCode).json({
       status: err.status,
       message: err.message,
+      code: err.statusCode || 500,
+      data: null,
     });
   }
 
-
-  console.error('UNEXPECTED ERROR 💥:', err);
   res.status(500).json({
     status: 'error',
     message: 'Something went wrong!',

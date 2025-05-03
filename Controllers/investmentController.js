@@ -12,7 +12,7 @@ exports.makeInvestment = catchAsync(async (req, res,next) => {
   const property = await Property.findById(propertyId);
 
   if (!property) {
-    return next(new appError('Property not found', 404));
+    return next(appError.create('Property not found', 404));
   }
 
   if (property.isRented) {
@@ -62,14 +62,15 @@ exports.makeInvestment = catchAsync(async (req, res,next) => {
 
 exports.getInvestmentById = catchAsync(async (req, res,next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return next(new appError('Invalid property ID', 400));
+    return next(appError.create('Invalid property ID', 400));
   }
   const investment = await Investment.findById(req.params.id);
   if (!investment) {
-      return next (new AppError('Investment not found', 404));
+    const error = appError.create('Investment not found', 404);
+    return next(error);
   }
   if(req.user.id !== investment.userId.toString()) {
-    return next(new appError('Unauthorized to view this investment', 403));
+    return next(appError.create('Unauthorized to view this investment', 403));
   }
 
 
@@ -104,15 +105,15 @@ exports.getInvestmentById = catchAsync(async (req, res,next) => {
 
     exports.getInvestmentProperty = catchAsync(async (req, res,next) => {
       if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-        return next(new appError('Invalid investment ID', 400));
+        return next(appError.create('Invalid investment ID', 400));
       }
       const investment = await Investment.findById(req.params.id);
       if (!investment) {
-        return next(new appError('Investment not found', 404));
+        return next(appError.create('Investment not found', 404));
       }
       const property = await Property.findById(investment.propertyId);
       if (!property) {
-        return next(new appError('Property not found', 404));
+        return next(appError.create('Property not found', 404));
       }
       res.status(200).json({
         property: property,
@@ -131,14 +132,14 @@ exports.getAllMyInvestments = catchAsync(async (req, res) => {
 exports.getMyreturnsOnInvestment = catchAsync(async (req, res, next) => {
   const investment = await Investment.findById(req.params.id);
   if (!investment) {
-    return next(new appError('Investment not found', 404));
+    return next(appError.create('Investment not found', 404));
   }
   if(req.user.id!== investment.userId.toString()) {
     return res.status(403).json({ message: "Unauthorized to view this investment" });
   }
   const property = await Property.findById(investment.propertyId)
   if (!property) {
-    return next(new appError('Property not found', 404));
+    return next(appError.create('Property not found', 404));
   }
   if(!property.isRented){
     updatedTotalReturns = (property.priceSold/property.totalShares)*investment.numOfShares;
