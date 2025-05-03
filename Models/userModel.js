@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
-const { userRoles } = require('../utils/constants');
+const userRoles = require('../utils/constants/userRoles');
 
 
 const userSchema = new mongoose.Schema(
@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema(
       },
       select: false,
     },
-    role: { type: String, enum: Object.values(userRoles), default: userRoles.user },
+    role: { type: String, enum: Object.values(userRoles), default: userRoles.USER },
     activity: { type: String, enum: ['active', 'inactive', 'Banned'], default: 'active' },
     phoneNumber: { type: Number, unique: true },
     email_verification_code: { type: Number },
