@@ -1,21 +1,12 @@
+const httpStatusText = require('../utils/constants/httpStatusText');
+
 class AppError extends Error {
-  constructor(message, statusCode) {
-    super(message);
-    this.statusCode = statusCode;
-    this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
-    this.isOperational = true;
-    Error.captureStackTrace(this, this.constructor);
-  }
-  toJSON() {
-    return {
-      status: this.status,
-      statusCode: this.statusCode,
-      message: this.message
-    };
+  create(message, statusCode, statusText = statusCode.startsWith('4') ? httpStatusText.FAIL : httpStatusText.ERROR) {
+      this.message = message;
+      this.statusCode = statusCode;
+      this.statusText = statusText;
+      return this;
   }
 }
 
-
-
-
-module.exports = AppError;
+module.exports = new AppError();

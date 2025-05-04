@@ -1,41 +1,28 @@
 const express = require('express');
+const authController = require('../Controllers/authController');
 const {
-  signup,
-  signin,
-  refreshToken,
-  logout,
-  googleAuth,
-  googleAuthCallback,
-  forgetPassword,
-  ResetPassword,
-  validateResetToken,
-} = require('../Controllers/authController');
-const {
-  verifyRefreshTokenInDb, allowedTo
-} = require('../Middlewares/authMiddleware');
+  verifyRefToken,
+} = require('../Middlewares/verifyToken');
 
 const router = express.Router();
 
-router.post('/signup', signup);
+router.post('/signup', authController.signup);
 
-router.post('/signin', signin);
+router.post('/signin', authController.signin);
 
-router.post(
-  '/refresh-token',
-  verifyRefreshTokenInDb,
-  refreshToken,
-);
+router.get('/refresh-token', verifyRefToken, authController.refreshToken);
 
-router.get('/google', googleAuth);
+router.get('/google', authController.googleAuth);
 
-router.get('/google/callback', googleAuthCallback);
+router.get('/google/callback', authController.googleAuthCallback);
 
-router.post('/logout', logout);
+router.post('/logout', authController.logout);
 
-router.post('/forgot-password', forgetPassword);
+router.post('/forgot-password', authController.forgetPassword);
 
-router.get('/reset-password', validateResetToken);
+router.get('/reset-password', authController.validateResetToken);
 
-router.post('/reset-password', ResetPassword);
+router.post('/reset-password', authController.ResetPassword);
 
 module.exports = router;
+

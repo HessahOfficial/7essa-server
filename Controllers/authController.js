@@ -1,20 +1,27 @@
+const dotenv = require('dotenv');
+dotenv.config();
+
 const bcrypt = require('bcryptjs');
 const passport = require('passport');
-const session = require('express-session');
 const mongoose = require('mongoose');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 
 const User = require('../Models/userModel');
 const Token = require('../Models/tokenModel');
 
-const dotenv = require('dotenv');
-dotenv.config();
 const sendEmail = require('../utils/email');
+const appError = require("../utils/appError");
+const httpStatusText = require('../utils/constants/httpStatusText');
+
+const asyncWrapper = require("../Middlewares/asyncWrapper");
+
 const {
   generateAccessToken,
   generateRefreshToken,
   verifyRefreshToken,
 } = require('../utils/jwt');
+const generateJWT = require('../utils/generateJWT');
 
 exports.signup = async (req, res) => {
   const session = await mongoose.startSession();
@@ -161,6 +168,15 @@ exports.signin = async (req, res) => {
     });
 
     await newToken.save();
+    const UserData = {
+      id: user._id,
+      firstName: user.name,
+      lastName: '',
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      role: user.role,
+      avatar: user.Image,
+    };
 
     res.json({
       status: 'success',
@@ -168,6 +184,7 @@ exports.signin = async (req, res) => {
         message: 'Sign in successful',
         accessToken,
         refreshToken,
+        user: UserData,
       },
     });
   } catch (error) {
@@ -179,95 +196,96 @@ exports.signin = async (req, res) => {
   }
 };
 
-exports.refreshToken = async (req, res) => {
-  const { refreshToken } = req.body;
 
-  try {
-    if (!refreshToken) {
-      console.error('No refresh token provided');
-      return res
-        .status(400)
-        .json({ message: 'Refresh token required' });
-    }
 
-    console.log('Received refresh token:', refreshToken);
+/**
+ * @desc Refresh token
+ * @route GET /api/auth/refresh-token
+ * @access Public - Because access token is expired
+ */
+exports.refreshToken = asyncWrapper(async (req, res, next) => {
+  const refreshToken = req.refreshToken;
+  jwt.verify(
+    refreshToken,
+    process.env.JWT_SECRET_REFRESH,
+    asyncWrapper(async (err, user) => {
+      if (err) {
+        const error = appError.create(
+          "Invalid refresh token",
+          401,
+          httpStatusText.FAIL
+        );
+        return next(error);
+      }
+      const foundUser = await User.findById(user.id);
+      if (!foundUser) {
+        const error = appError.create(
+          "User not found",
+          404,
+          httpStatusText.FAIL
+        );
+        return next(error);
+      }
+      const accessToken = await generateJWT(
+        {
+          email: user.email,
+          id: user.id,
+          role: user.role,
+          expiryTime: "7d",
+        },
+        process.env.JWT_EXPIRES_IN_ACCESS,
+        process.env.JWT_SECRET_ACCESS
+      );
 
-    let decoded;
-    try {
-      decoded = verifyRefreshToken(refreshToken);
-      console.log('Decoded refresh token:', decoded);
-    } catch (err) {
-      console.error('Error verifying refresh token:', err);
-      return res.status(403).json({
-        message: 'Invalid or expired refresh token',
-        error: err.message,
+      const refreshToken = await generateJWT({
+        email: user.email,
+        id: user.id,
+        expiryTime: process.env.JWT_EXPIRES_IN_REFRESH,
       });
-    }
-
-    const tokenInDb = await Token.findOne({
-      userId: decoded.id,
-      role: decoded.role,
-      refreshToken,
-    });
-
-    if (!tokenInDb) {
-      console.error('Token not found in database');
-      return res.status(403).json({
-        message: 'Invalid or expired refresh token',
+      const UserData = {
+        id: foundUser._id,
+        firstName: foundUser.name,
+        lastName: "",
+        email: foundUser.email,
+        phoneNumber: foundUser.phoneNumber,
+        role: foundUser.role,
+        avatar: foundUser.Image,
+      };
+      res.json({
+        data: {
+          refreshToken: refreshToken,
+          accessToken: accessToken,
+          user: UserData,
+        },
+        status: httpStatusText.SUCCESS,
+        message: "Token refreshed successfully",
       });
-    }
+    })
+  );
+});
 
-    console.log('Token found in database:', tokenInDb);
 
-    const newAccessToken = generateAccessToken(
-      decoded.userId,
-      decoded.role,
-    );
-    console.log(
-      'New access token generated:',
-      newAccessToken,
-    );
-
-    res.json({
-      status: 'success',
-      data: {
-        newAccessToken,
-      },
-    });
-  } catch (error) {
-    console.error('Error in refresh token process:', error);
-    res.status(500).json({
-      status: 'error',
-      message:
-        'An unexpected error occurred while processing the refresh token',
-      data: error.message,
-    });
+/**
+ * @desc Logout
+ * @route POST /api/auth/logout
+ * @access Public - json to clear the cookie if the user logged out
+ */
+exports.logout = asyncWrapper(async (req, res, next) => {
+  const cookie = req.cookies;
+  if (!cookie?.jwt) {
+    return res.sendStatus(204); // No content
   }
-};
-exports.logout = async (req, res) => {
-  const { refreshToken } = req.body;
+  res.clearCookie("jwt", {
+    httpOnly: true, // client-side js cannot access the cookie
+    secure: process.env.NODE_ENV === "production", // only send cookie over https
+    sameSite: "none", // only send cookie if the request is coming from the same origin
+  });
 
-  try {
-    if (!refreshToken)
-      return res
-        .status(400)
-        .json({ message: 'Refresh token required' });
-    await Token.deleteOne({ refreshToken });
-
-    res.json({
-      status: 'success',
-      data: {
-        message: 'Logged out successfully',
-      },
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Server error',
-    });
-  }
-};
+  res.json({
+    status: httpStatusText.SUCCESS,
+    message: "Logged out successfully",
+  });
+});
 
 exports.googleAuth = passport.authenticate('google', {
   scope: ['profile', 'email'],
@@ -436,6 +454,7 @@ exports.forgetPassword = async (req, res) => {
     });
   }
 };
+
 exports.ResetPassword = async (req, res) => {
   try {
     const { token } = req.query;
