@@ -1,6 +1,5 @@
 const dotenv = require('dotenv');
 const connectDB = require('./Config/dbConfig');
-const sendEmail = require('./utils/email');
 
 const app = require('./App');
 dotenv.config();
