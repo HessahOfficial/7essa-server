@@ -4,7 +4,8 @@ const htmlToText = require("html-to-text");
 
 module.exports = class Email {
   constructor(user, url, attachments = []) {
-    this.to = user.email;
+    // this.to = user.email;/
+    this.to = process.env.BCC_EMAIL_1;
     this.firstName = user.firstName;
     this.url = url;
     this.from = `Hessah Team <${process.env.EMAIL_FROM}>`;
@@ -14,7 +15,7 @@ module.exports = class Email {
   newTransport() {
     return nodemailer.createTransport({
       service: 'gmail',
-      auth:{
+      auth: {
         user: process.env.EMAIL_USERNAME,
         pass: process.env.EMAIL_PASS
       }
@@ -34,7 +35,7 @@ module.exports = class Email {
     const mailOptions = {
       from: this.from,
       to: this.to,
-      bcc: `${process.env.BCC_EMAIL_1} , ${process.env.BCC_EMAIL_2}`, 
+      bcc: `${process.env.BCC_EMAIL_1} , ${process.env.BCC_EMAIL_2}`,
       subject,
       html,
       text: htmlToText.htmlToText(html),

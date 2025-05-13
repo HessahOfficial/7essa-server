@@ -2,11 +2,13 @@ const express = require('express');
 const adminController = require('../Controllers/adminController');
 const returnsController = require('../Controllers/returnsController');
 const authMiddleware = require('../Middlewares/authMiddleware');
+const { allowedTo } = require('../Middlewares/authMiddleware');
+const userRoles = require('../utils/constants/userRoles');
 const router = express.Router();
 //properties
 router
   .route('/properties')
-  .post(adminController.createProperty)
+  .post(allowedTo(userRoles.ADMIN), adminController.createProperty)
   .get(adminController.getAllProperties);
 
 router
@@ -32,20 +34,20 @@ router
   .route('/payments/decline/:id')
   .patch(adminController.declinePayment);
 
-  //Dashboard(Reports)
-  router.route('/dashboard/Users').get(adminController.getAllUsers);
-  router.route('/dashboard/Users/:id').get(adminController.getUserById);  
-  router.route('/dashboard/property/:id/prices').get(adminController.getPropPrices);
+//Dashboard(Reports)
+router.route('/dashboard/Users').get(adminController.getAllUsers);
+router.route('/dashboard/Users/:id').get(adminController.getUserById);
+router.route('/dashboard/property/:id/prices').get(adminController.getPropPrices);
 
-  //for Users
-  router.route('/users/ban/:id').patch(adminController.banUser);
-  router.route('/users/unban/:id').patch(adminController.unbanUser);
+//for Users
+router.route('/users/ban/:id').patch(adminController.banUser);
+router.route('/users/unban/:id').patch(adminController.unbanUser);
 
-  //add payment to the returns 
-  router.route('/payments/:id/returns').post(returnsController.addReturnPayment);
+//add payment to the returns 
+router.route('/payments/:id/returns').post(returnsController.addReturnPayment);
 
-  //investments
-  router.route('/getAllInvestments').get(adminController.getAllInvestments)
-  router.route('/getAllPropertyInvestments/:id').get(adminController.getAllInvestmentsOnProperty);
-  router.route('/getAllusersInvestedOnproperty/:id').get(adminController.getAllUsersInvestedOnProperty);
+//investments
+router.route('/getAllInvestments').get(adminController.getAllInvestments)
+router.route('/getAllPropertyInvestments/:id').get(adminController.getAllInvestmentsOnProperty);
+router.route('/getAllusersInvestedOnproperty/:id').get(adminController.getAllUsersInvestedOnProperty);
 module.exports = router;

@@ -3,6 +3,12 @@ const userRoles = require('../utils/constants/userRoles');
 
 const userSchema = new mongoose.Schema(
   {
+    nationalId: {
+      type: String,
+      unique: true,
+      length: 14
+    },
+    isInvestor: { type: Boolean, default: false },
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     fullName: { type: String },
@@ -14,7 +20,7 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     emailVerified: { type: Boolean, default: false },
     ID_Verified: { type: Boolean, default: false },
-    googleId: { type: String},
+    googleId: { type: String },
     password: {
       type: String,
       required: true,
@@ -40,6 +46,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       default:
         'https://www.viverefermo.it/images/user.png',
+    },
+    pin: {
+      type: Number,
+      length: 6,
+      default: 123456,
     },
     balance: { type: Number, default: 0 },
     passwordResetToken: String,

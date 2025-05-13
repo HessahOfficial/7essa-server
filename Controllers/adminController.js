@@ -7,26 +7,26 @@ const Returns = require("../Models/returnsModel");
 const Investment = require("../Models/investmentModel");
 const mongoose = require("mongoose");
 //For properties
-exports.getAllProperties = catchAsync(async(req,res,next)=>{
+exports.getAllProperties = catchAsync(async (req, res, next) => {
   const properties = await Property.find({});
   if (!properties) {
     return next(appError('No properties found', 404));
   }
   res.status(200).json({
-    status:'success',
+    status: 'success',
     results: properties.length,
     data: properties
   })
 })
 
 
-exports.getPropertyById = catchAsync(async (req, res,next) => {
+exports.getPropertyById = catchAsync(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
     return next(appError('Invalid property ID', 400));
   }
   const property = await Property.findById(req.params.id);
   if (!property) {
-    return next (appError('Property not found', 404));
+    return next(appError('Property not found', 404));
   }
   res.status(200).json({
     status: 'success',
@@ -64,7 +64,7 @@ exports.createProperty = catchAsync(async (req, res) => {
     return res.status(400).json({ status: 'fail', message: 'Property Title already exists' });
   }
   const requiredFields = [
-    'title', 'description', 'city', 'size', 'numOfRooms', 'images', 'totalShares',
+    'title', 'description', 'city', 'size', 'numOfRooms', 'totalShares',
     'availableShares', 'price', 'pricePerShare', 'benefits', 'status', 'investmentDocs'
   ];
 
@@ -168,7 +168,7 @@ exports.getAllPayments = catchAsync(async (req, res, next) => {
     return next(appError('No payments found', 404));
   }
   res.status(200).json({
-    status:'success',
+    status: 'success',
     results: payments.length,
     data: payments
   })
@@ -188,7 +188,7 @@ exports.getPaymentById = catchAsync(async (req, res, next) => {
   });
 })
 // admin cant create a payment this is just for testing purposes
-exports.createPayment = catchAsync(async (req, res,next) => {
+exports.createPayment = catchAsync(async (req, res, next) => {
   const newPayment = await Payment.create(req.body);
   res.status(201).json({
     status: 'success',
@@ -249,7 +249,7 @@ exports.getAllUsers = catchAsync(async (req, res, next) => {
     return next(appError('No users found', 404));
   }
   res.status(200).json({
-    status:'success',
+    status: 'success',
     results: users.length,
     data: users
   })
@@ -334,9 +334,9 @@ exports.getAllInvestments = catchAsync(async (req, res, next) => {
   if (!investments) {
     return next(appError('No investments found', 404));
   }
-  
+
   res.status(200).json({
-    status:'success',
+    status: 'success',
     results: investments.length,
     data: investments
   })
@@ -347,26 +347,26 @@ exports.getAllInvestmentsOnProperty = catchAsync(async (req, res) => {
     return next(appError('Invalid property ID', 400));
   }
   const investments = await Investment.find({ propertyId: req.params.id });
-  
+
   if (!investments) {
     return res.status(404).json({ message: 'Investments not found' });
   }
 
   res.status(200).json({
-    status:'success',
+    status: 'success',
     results: investments.length,
     data: investments
   })
 })
 
-exports.getAllUsersInvestedOnProperty= catchAsync(async (req, res,next) => {
+exports.getAllUsersInvestedOnProperty = catchAsync(async (req, res, next) => {
   const investments = await Investment.find({ propertyId: req.params.id });
   const users = await User.find({ _id: { $in: investments.map(investment => investment.userId) } });
-  if (!investments ||!users) {
+  if (!investments || !users) {
     return next(appError('No investments or users found', 404));
   }
   res.status(200).json({
-    status:'success',
+    status: 'success',
     results: users.length,
     data: users
   })

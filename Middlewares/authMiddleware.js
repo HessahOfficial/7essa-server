@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const Token = require('../Models/tokenModel');
+const User = require('../Models/userModel');
 
 const authenticateAccessToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -29,13 +30,16 @@ const authenticateAccessToken = (req, res, next) => {
 };
 
 const authenticateRefreshToken = (req, res, next) => {
+
   const { token: refreshToken } = req.body;
+
 
   if (!refreshToken) {
     return res
       .status(401)
       .json({ status: 'fail', message: 'Refresh token required' });
   }
+
 
   jwt.verify(
     refreshToken,
@@ -54,6 +58,7 @@ const authenticateRefreshToken = (req, res, next) => {
 };
 
 const verifyRefreshTokenInDb = async (req, res, next) => {
+
   let refreshToken =
     req.body.refreshToken ||
     req.headers['authorization']?.split(' ')[1];
@@ -82,16 +87,17 @@ const verifyRefreshTokenInDb = async (req, res, next) => {
 
 const allowedTo = (...roles) => {
 
-  return (req, res, next) => {
-    console.log('User:', req.user);
-    if (!req.user?.role) {
+  return async (req, res, next) => {
+    const oldUser = await User.findById(req.user.id);
+
+    if (!oldUser.role) {
       return res.status(403).json({ status: 'fail', message: 'Unauthorized: No role found' });
     }
 
-    if (!roles.includes(req.user.role)) {
+    if (!roles.includes(oldUser.role)) {
       return res.status(403).json({
         status: 'fail',
-        message: `Forbidden: Access requires one of the following roles: ${roles.join(', ')} and you are ${req.user.role}`,
+        message: `Forbidden: Access requires one of the following roles: ${roles.join(', ')} and you are ${oldUser.role}`,
       });
     }
 
