@@ -172,16 +172,19 @@ exports.signin = asyncWrapper(async (req, res, next) => {
         email: user.email,
         id: user._id,
         role: user.role,
-        expiryTime: '7d',
+        expiryTime: process.env.JWT_EXPIRES_IN_ACCESS,
       },
-      '7d',
+      process.env.JWT_EXPIRES_IN_ACCESS,
       process.env.JWT_SECRET_ACCESS,
     );
-    const refreshToken = await generateJWT({
-      email: user.email,
-      id: user._id,
-      expiryTime: '7d',
-    });
+    const refreshToken = await generateJWT(
+      {
+        email: user.email,
+        id: user._id,
+        expiryTime: process.env.JWT_EXPIRES_IN_REFRESH,
+      },
+      process.env.JWT_EXPIRES_IN_REFRESH,
+    );
 
     // Create secure cookie with refresh token
     res.cookie('jwt', refreshToken, {
@@ -292,7 +295,7 @@ exports.refreshToken = asyncWrapper(
             email: user.email,
             id: user.id,
             role: user.role,
-            expiryTime: '7d',
+            expiryTime: process.env.JWT_EXPIRES_IN_ACCESS,
           },
           process.env.JWT_EXPIRES_IN_ACCESS,
           process.env.JWT_SECRET_ACCESS,
@@ -708,16 +711,16 @@ const confirmEmail = asyncWrapper(
             username: foundUser.username,
             id: foundUser._id,
             role: foundUser.role,
-            expiryTime: '7d',
+            expiryTime: process.env.JWT_EXPIRES_IN_ACCESS,
           },
-          '7d',
+          process.env.JWT_EXPIRES_IN_ACCESS,
           process.env.JWT_SECRET_ACCESS,
         );
 
         const refreshToken = await generateJWT({
           email: foundUser.email,
           id: foundUser._id,
-          expiryTime: '7d',
+          expiryTime: process.env.JWT_EXPIRES_IN_REFRESH,
         });
 
         res.status(200).json({
@@ -739,3 +742,4 @@ const confirmEmail = asyncWrapper(
 exports.changeMyPassword = changeMyPassword;
 exports.verifyEmail = verifyEmail;
 exports.confirmEmail = confirmEmail;
+
