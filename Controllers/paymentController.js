@@ -1,37 +1,45 @@
 const Payment = require('../Models/paymentModel');
-const catchAsync = require('../utils/catchAsync');
+const asyncWrapper = require('../Middlewares/asyncWrapper');
 const mongoose = require('mongoose');
 const User = require('../Models/userModel');
 const moment = require('moment-timezone');
+const appError = require('../utils/appError');
+const httpStatusText = require('../utils/constants/httpStatusText');
 
 const egyptTime = moment().tz('Africa/Cairo').format('hh:mm A');
 
-exports.createPayment = catchAsync(async (req, res) => {
+exports.createPayment = asyncWrapper(async (req, res, next) => {
     let userId = req.currentUser.id;
     const { amount, paymentMethod, paymentType } = req.body;
 
     if (!userId || typeof userId !== 'string') {
-        return res.status(400).json({ status: 'fail', message: 'User ID is required and must be a string' });
+        const error = appError.create('User ID is required and must be a string', 400, httpStatusText.FAIL);
+        return next(error);
     }
     if (!mongoose.Types.ObjectId.isValid(userId)) {
-        return res.status(400).json({ status: 'fail', message: 'User ID is invalid' });
+        const error = appError.create('User ID is invalid', 400, httpStatusText.FAIL);
+        return next(error);
     }
 
     const user = await User.findById(userId);
     if (!user) {
-        return res.status(404).json({ status: 'fail', message: 'User not found' });
+        const error = appError.create('User not found', 404, httpStatusText.FAIL);
+        return next(error);
     }
 
     if (!amount || typeof amount !== 'number' || amount < 1000) {
-        return res.status(400).json({ status: 'fail', message: 'Amount is required and must be at least 1000' });
+        const error = appError.create('Amount is required and must be at least 1000', 400, httpStatusText.FAIL);
+        return next(error);
     }
 
     const allowedPaymentMethods = ['instaPay', 'VodafoneCash', 'bankTransfer'];
     if (!paymentMethod || !allowedPaymentMethods.includes(paymentMethod)) {
-        return res.status(400).json({
-            status: 'fail',
-            message: `Payment method is required and must be one of: ${allowedPaymentMethods.join(', ')}`,
-        });
+        const error = appError.create(
+            `Payment method is required and must be one of: ${allowedPaymentMethods.join(', ')}`,
+            400,
+            httpStatusText.FAIL
+        );
+        return next(error);
     }
 
     const newPayment = new Payment({
@@ -50,97 +58,82 @@ exports.createPayment = catchAsync(async (req, res) => {
     });
 });
 
-exports.getPaymentStatus = catchAsync(async (req, res) => {
-
-    paymentId = req.params.id;
+exports.getPaymentStatus = asyncWrapper(async (req, res, next) => {
+    const paymentId = req.params.id;
     if (!mongoose.Types.ObjectId.isValid(paymentId)) {
-        return res.status(400).json({ status: 'fail', message: 'Payment ID is invalid' });
+        const error = appError.create('Payment ID is invalid', 400, httpStatusText.FAIL);
+        return next(error);
     }
     const payment = await Payment.findById(paymentId);
     if (!payment) {
-        return res.status(404).json({ status: 'fail', message: 'Payment not found' });
+        const error = appError.create('Payment not found', 404, httpStatusText.FAIL);
+        return next(error);
     }
 
-    paymentstatus = payment.paymentStatus;
+    const paymentstatus = payment.paymentStatus;
     res.status(200).json({
         status: 'success',
-        data: {
-            paymentstatus,
-        },
+        data: { paymentstatus },
     });
-
 });
 
-exports.getHistory = catchAsync(async (req, res) => {
-
+exports.getHistory = asyncWrapper(async (req, res, next) => {
     const userId = req.currentUser.id;
-
     const user = await User.findById(userId);
     if (!user) {
-        return res.status(404).json({ status: 'fail', message: 'User not found' });
+        const error = appError.create('User not found', 404, httpStatusText.FAIL);
+        return next(error);
     }
     const payments = await Payment.find({ userId });
     res.status(200).json({
         status: 'success',
-        data: {
-            payments,
-        },
+        data: { payments },
     });
-
-
-
 });
 
-
-
-exports.deletePayment = catchAsync(async (req, res) => {
+exports.deletePayment = asyncWrapper(async (req, res, next) => {
     const paymentId = req.params.id;
-
     if (!mongoose.Types.ObjectId.isValid(paymentId)) {
-        return res.status(400).json({ status: 'fail', message: 'Invalid Payment ID format' });
+        const error = appError.create('Invalid Payment ID format', 400, httpStatusText.FAIL);
+        return next(error);
     }
     const payment = await Payment.findById(paymentId);
     if (!payment) {
-        return res.status(404).json({ status: 'fail', message: 'Payment not found' });
+        const error = appError.create('Payment not found', 404, httpStatusText.FAIL);
+        return next(error);
     }
     if (payment.userId.toString() !== req.currentUser.id) {
-        return res.status(403).json({ status: 'fail', message: 'Unauthorized to delete this payment' });
+        const error = appError.create('Unauthorized to delete this payment', 403, httpStatusText.FAIL);
+        return next(error);
     }
     await Payment.findByIdAndDelete(paymentId);
-
-    res.status(200).json({ status: 'success', data: " Request Deleted Sucessfully" });
+    res.status(200).json({ status: 'success', data: ' Request Deleted Sucessfully' });
 });
 
-
-exports.getDepositHistory = catchAsync(async (req, res) => {
+exports.getDepositHistory = asyncWrapper(async (req, res, next) => {
     const userId = req.currentUser.id;
-
     const user = await User.findById(userId);
     if (!user) {
-        return res.status(404).json({ status: 'fail', message: 'User not found' });
+        const error = appError.create('User not found', 404, httpStatusText.FAIL);
+        return next(error);
     }
     const depositHistory = await Payment.find({ userId, paymentType: 'deposit' });
     res.status(200).json({
         status: 'success',
-        data: {
-            depositHistory,
-        },
+        data: { depositHistory },
     });
-}
-);
-exports.getWithdrawHistory = catchAsync(async (req, res) => {
+});
 
+exports.getWithdrawHistory = asyncWrapper(async (req, res, next) => {
     const userId = req.currentUser.id;
-
     const user = await User.findById(userId);
     if (!user) {
-        return res.status(404).json({ status: 'fail', message: 'User not found' });
+        const error = appError.create('User not found', 404, httpStatusText.FAIL);
+        return next(error);
     }
     const withdrawHistory = await Payment.find({ userId, paymentType: 'withdraw' });
     res.status(200).json({
         status: 'success',
-        data: {
-            withdrawHistory,
-        },
+        data: { withdrawHistory },
     });
 });
