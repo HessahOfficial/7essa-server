@@ -7,7 +7,7 @@ const router = express.Router();
 //properties
 router
   .route('/properties')
-  .post(allowedTo(userRoles.ADMIN), adminController.createProperty)
+  .post(allowedTo(userRoles.ADMIN , userRoles.PARTNER), adminController.createProperty)
   .get(adminController.getAllProperties);
 
 router
