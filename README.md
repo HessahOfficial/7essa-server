@@ -97,16 +97,14 @@ npm start
 5. Open a Pull Request
 
 ### Important Notes :
-To ensure a streamlined development process, adhere to the following guidelines:
+**To ensure a streamlined development process, adhere to the following guidelines:**
 
-1. Folder Structure Guidelines:
-Ensure a well-organized folder structure for server-side development, distinctly arranging directories for controllers, routes, middlewares, models, and utilities
-
-2. Git Flow Guidelines:
-Follow a disciplined branching strategy (Example) such as using master/main for production, development for ongoing work, and feature branches for new functionalities or fixes.
-
-3. JSON Response (JSend Rules) Guidelines:
-Implement a uniform response structure (Example) adhering to JSend specifications for successful and error responses, coupled with appropriate HTTP status codes.
+- **1. Folder Structure Guidelines:**
+> Ensure a well-organized folder structure for server-side development, distinctly arranging directories for controllers, routes, middlewares, models, and utilities
+- **2. [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/) Guidelines:**
+> Follow a disciplined branching strategy (Example) such as using master/main for production, development for ongoing work, and feature branches for new functionalities or fixes.
+- **3. JSON Response ([JSend Rules](https://github.com/omniti-labs/jsend)) Guidelines:**
+>Implement a uniform response structure (Example) adhering to JSend specifications for successful and error responses, coupled with appropriate HTTP status codes.
 
 ## 📝 License
 
