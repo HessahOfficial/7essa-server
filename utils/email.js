@@ -4,8 +4,7 @@ const htmlToText = require("html-to-text");
 
 module.exports = class Email {
   constructor(user, url, attachments = []) {
-    // this.to = user.email;/
-    this.to = process.env.BCC_EMAIL_1;
+    this.to = user.email;
     this.firstName = user.firstName;
     this.url = url;
     this.from = `Hessah Team <${process.env.EMAIL_FROM}>`;
