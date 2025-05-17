@@ -13,6 +13,7 @@ const propertyRouter = require('./Routes/propertyRoutes');
 const {
   allowedTo,
   authenticateAccessToken,
+  authenticateRefreshToken,
 } = require('./Middlewares/authMiddleware');
 
 const userRoles = require('./utils/constants/userRoles');
@@ -39,8 +40,7 @@ app.get('/', (req, res) => {
 
 app.use(
   '/admin',
-  authenticateAccessToken,
-  allowedTo(userRoles.ADMIN),
+  authenticateRefreshToken,
   adminRouter,
 );
 app.use('/auth', authRouter);

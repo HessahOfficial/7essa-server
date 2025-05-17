@@ -25,7 +25,7 @@ const propertySchema = new mongoose.Schema({
   },
   images: {
     type: [String],
-    required: [true, 'Property must have an image'],
+    default: ["https://cdn.pixabay.com/photo/2017/06/16/15/58/luxury-home-2409518_960_720.jpg"]
   },
   totalShares: {
     type: Number,
@@ -72,6 +72,22 @@ const propertySchema = new mongoose.Schema({
     required: [true, 'benefits are required'],
   },
   priceSold: {
+    type: Number,
+    default: 0,
+  },
+  numOfBeds: {
+    type: Number,
+    default: 0,
+  },
+  numOfKitchens: {
+    type: Number,
+    default: 0,
+  },
+  numOfBathrooms: {
+    type: Number,
+    default: 0,
+  },
+  area: {
     type: Number,
     default: 0,
   },

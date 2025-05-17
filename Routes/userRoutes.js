@@ -12,11 +12,12 @@ const {
     sendPushNotificationToAll,
     sendPushNotificationToUser
 } = require('../Controllers/userController');
-const { authenticateAccessToken } = require('../Middlewares/authMiddleware');
+const { authenticateAccessToken, authenticateRefreshToken } = require('../Middlewares/authMiddleware');
 
-router.get('/:id/favourites', getUserFavourites);
-router.post('/:id/favourites/:PropertyId', addUserFavourites);
-router.delete('/:id/favourites/:PropertyId', deleteUserFavourites);
+router.route("/favourites")
+    .get(getUserFavourites)
+    .post(addUserFavourites)
+    .delete(deleteUserFavourites);
 
 
 router.patch(
@@ -26,7 +27,7 @@ router.patch(
 );
 router.patch(
     '/updateUser/:id',
-    authenticateAccessToken,
+    authenticateRefreshToken,
     updateUser,
 );
 
