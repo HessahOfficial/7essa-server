@@ -1,14 +1,13 @@
 const express = require('express');
 const adminController = require('../Controllers/adminController');
 const returnsController = require('../Controllers/returnsController');
-const authMiddleware = require('../Middlewares/authMiddleware');
-const { allowedTo } = require('../Middlewares/authMiddleware');
+const allowedTo  = require('../Middlewares/allowedTo');
 const userRoles = require('../utils/constants/userRoles');
 const router = express.Router();
 //properties
 router
   .route('/properties')
-  .post(allowedTo(userRoles.ADMIN), adminController.createProperty)
+  .post(allowedTo(userRoles.ADMIN , userRoles.PARTNER), adminController.createProperty)
   .get(adminController.getAllProperties);
 
 router

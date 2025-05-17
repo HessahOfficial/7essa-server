@@ -3,16 +3,18 @@ const express = require('express');
 const router = express.Router();
 const { upload } = require('../Config/cloudinaryConfig');
 const {
-    updateUser,
-    deleteUser,
-    getUserFavourites,
-    addUserFavourites,
-    deleteUserFavourites,
-    addImage,
-    sendPushNotificationToAll,
-    sendPushNotificationToUser
+  updateUser,
+  deleteUser,
+  getUserFavourites,
+  addUserFavourites,
+  deleteUserFavourites,
+  addImage,
+  sendPushNotificationToAll,
+  sendPushNotificationToUser,
 } = require('../Controllers/userController');
-const { authenticateAccessToken, authenticateRefreshToken } = require('../Middlewares/authMiddleware');
+const {
+  verifyToken,
+} = require('../Middlewares/verifyToken');
 
 router.route("/favourites")
     .get(getUserFavourites)
@@ -21,18 +23,20 @@ router.route("/favourites")
 
 
 router.patch(
-    '/update-image/:id',
-    upload.single('photo'),
-    addImage,
+  '/update-image/:id',
+  verifyToken,
+  upload.single('photo'),
+  addImage,
 );
-router.patch(
-    '/updateUser/:id',
-    authenticateRefreshToken,
-    updateUser,
+router.patch('/updateUser/:id', verifyToken, updateUser);
+
+router.delete('/:id', verifyToken, deleteUser);
+router.post(
+  '/notifyAll',
+  verifyToken,
+  sendPushNotificationToAll,
 );
+router.post('/notifyUser', sendPushNotificationToUser);
 
-router.delete('/:id', authenticateAccessToken, deleteUser);
-router.post("/notifyAll", sendPushNotificationToAll);
-router.post("/notifyUser", sendPushNotificationToUser);
+module.exports = router;
 
-module.exports = router;   

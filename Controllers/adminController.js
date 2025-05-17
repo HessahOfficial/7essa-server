@@ -1,40 +1,44 @@
 const Property = require('../Models/propertyModel');
 const Payment = require('../Models/paymentModel');
-const catchAsync = require('../utils/catchAsync');
+const asyncWrapper = require('../Middlewares/asyncWrapper');
 const User = require('../Models/userModel');
 const appError = require('../utils/appError');
 const Returns = require("../Models/returnsModel");
 const Investment = require("../Models/investmentModel");
 const mongoose = require("mongoose");
+const httpStatusText = require('../utils/constants/httpStatusText');
+
 //For properties
-exports.getAllProperties = catchAsync(async (req, res, next) => {
+exports.getAllProperties = asyncWrapper(async(req,res,next)=>{
   const properties = await Property.find({});
   if (!properties) {
-    return next(appError('No properties found', 404));
+    const error = appError.create('No properties found', 404, httpStatusText.FAIL);
+    return next(error);
   }
   res.status(200).json({
     status: 'success',
     results: properties.length,
     data: properties
-  })
-})
+  });
+});
 
-
-exports.getPropertyById = catchAsync(async (req, res, next) => {
+exports.getPropertyById = asyncWrapper(async (req, res,next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return next(appError('Invalid property ID', 400));
+    const error = appError.create('Invalid property ID', 400, httpStatusText.FAIL);
+    return next(error);
   }
   const property = await Property.findById(req.params.id);
   if (!property) {
-    return next(appError('Property not found', 404));
+    const error = appError.create('Property not found', 404, httpStatusText.FAIL);
+    return next(error);
   }
   res.status(200).json({
     status: 'success',
     data: property
   });
-})
+});
 
-exports.createProperty = catchAsync(async (req, res) => {
+exports.createProperty = asyncWrapper(async (req, res, next) => {
   const {
     title,
     description,
@@ -61,7 +65,8 @@ exports.createProperty = catchAsync(async (req, res) => {
   } = req.body;
   const titleExist = await Property.findOne({ title: title });
   if (titleExist) {
-    return res.status(400).json({ status: 'fail', message: 'Property Title already exists' });
+    const error = appError.create('Property Title already exists', 400, httpStatusText.FAIL);
+    return next(error);
   }
   const requiredFields = [
     'title', 'description', 'city', 'size', 'numOfRooms', 'totalShares',
@@ -71,25 +76,19 @@ exports.createProperty = catchAsync(async (req, res) => {
   const missingFields = requiredFields.filter(field => !req.body[field]);
 
   if (missingFields.length > 0) {
-    return res.status(400).json({
-      status: 'fail',
-      message: `Missing required fields: ${missingFields.join(', ')}`,
-    });
+    const error = appError.create(`Missing required fields: ${missingFields.join(', ')}`, 400, httpStatusText.FAIL);
+    return next(error);
   }
 
   if (size <= 0 || numOfRooms <= 0 || totalShares <= 0 || availableShares < 0 || yearlyPayment <= 0 || benefits < 0) {
-    return res.status(400).json({
-      status: 'fail',
-      message: 'Numeric values must be positive',
-    });
+    const error = appError.create('Numeric values must be positive', 400, httpStatusText.FAIL);
+    return next(error);
   }
 
   const validStatuses = ['Available', 'Funded', 'Exited'];
   if (!validStatuses.includes(status)) {
-    return res.status(400).json({
-      status: 'fail',
-      message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
-    });
+    const error = appError.create(`Invalid status. Must be one of: ${validStatuses.join(', ')}`, 400, httpStatusText.FAIL);
+    return next(error);
   }
 
   const newProperty = new Property({
@@ -122,14 +121,12 @@ exports.createProperty = catchAsync(async (req, res) => {
     status: 'success',
     data: newProperty
   });
-}
-);
+});
 
-
-
-exports.updateProperty = catchAsync(async (req, res, next) => {
+exports.updateProperty = asyncWrapper(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return next(appError('Invalid property ID', 400));
+    const error = appError.create('Invalid property ID', 400, httpStatusText.FAIL);
+    return next(error);
   }
   const property = await Property.findByIdAndUpdate(
     req.params.id,
@@ -137,239 +134,241 @@ exports.updateProperty = catchAsync(async (req, res, next) => {
     { new: true, runValidators: true },
   );
   if (!property) {
-    return next(appError('Property not found', 404));
+    const error = appError.create('Property not found', 404, httpStatusText.FAIL);
+    return next(error);
   }
   res.status(200).json({
     status: 'success',
     data: property
   });
-})
+});
 
-
-exports.deleteProperty = catchAsync(async (req, res, next) => {
+exports.deleteProperty = asyncWrapper(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return next(appError('Invalid property ID', 400));
+    const error = appError.create('Invalid property ID', 400, httpStatusText.FAIL);
+    return next(error);
   }
   const property = await Property.findByIdAndDelete(req.params.id);
   if (!property) {
-    return next(appError('Property not found', 404));
+    const error = appError.create('Property not found', 404, httpStatusText.FAIL);
+    return next(error);
   }
   res.status(204).json({
     status: 'success',
     data: null
   });
-})
+});
 
 //for payments
-
-exports.getAllPayments = catchAsync(async (req, res, next) => {
+exports.getAllPayments = asyncWrapper(async (req, res, next) => {
   const payments = await Payment.find({});
   if (!payments) {
-    return next(appError('No payments found', 404));
+    const error = appError.create('No payments found', 404, httpStatusText.FAIL);
+    return next(error);
   }
   res.status(200).json({
     status: 'success',
     results: payments.length,
     data: payments
-  })
-})
+  });
+});
 
-exports.getPaymentById = catchAsync(async (req, res, next) => {
+exports.getPaymentById = asyncWrapper(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return next(appError('Invalid payment ID', 400));
+    const error = appError.create('Invalid payment ID', 400, httpStatusText.FAIL);
+    return next(error);
   }
   const payment = await Payment.findById(req.params.id);
   if (!payment) {
-    return next(appError('Payment not found', 404));
+    const error = appError.create('Payment not found', 404, httpStatusText.FAIL);
+    return next(error);
   }
   res.status(200).json({
     status: 'success',
     data: payment
   });
-})
-// admin cant create a payment this is just for testing purposes
-exports.createPayment = catchAsync(async (req, res, next) => {
+});
+
+exports.createPayment = asyncWrapper(async (req, res, next) => {
   const newPayment = await Payment.create(req.body);
   res.status(201).json({
     status: 'success',
     data: newPayment
-  })
-})
+  });
+});
 
-exports.approvePayment = catchAsync(
-  async (req, res, next) => {
-    const payment = await Payment.findByIdAndUpdate(
-      req.params.id,
-      { paymentStatus: 'paid' },
-      { new: true, runValidators: true },
-    );
-    if (!payment)
-      return next(appError('Payment not found', 404));
-    const userId = payment.userId;
-    const amount = payment.amount;
-    const userToUpdate = await User.findByIdAndUpdate(
-      userId,
-      { $inc: { balance: amount } },
-      { new: true, runValidators: true },
-    );
-    if (!userToUpdate)
-      return next(new Error('User not found', 404));
-    res.status(200).json({
-      status: 'success',
-      data: {
-        payment,
-      },
-    });
-    //send notification to the User to let hem know that the payment has been approved
-  },
-);
-exports.declinePayment = catchAsync(
-  async (req, res, next) => {
-    const payment = await Payment.findByIdAndUpdate(
-      req.params.id,
-      { paymentStatus: 'declined' },
-      { new: true, runValidators: true },
-    );
-    if (!payment)
-      return next(new Error('Payment not found', 404));
-    res.status(200).json({
-      status: 'success',
-      data: {
-        payment,
-      },
-    });
-    //send notification to the User to let him know that the payment has been declined
-  },
-);
+exports.approvePayment = asyncWrapper(async (req, res, next) => {
+  const payment = await Payment.findByIdAndUpdate(
+    req.params.id,
+    { paymentStatus: 'paid' },
+    { new: true, runValidators: true },
+  );
+  if (!payment) {
+    const error = appError.create('Payment not found', 404, httpStatusText.FAIL);
+    return next(error);
+  }
+  const userId = payment.userId;
+  const amount = payment.amount;
+  const userToUpdate = await User.findByIdAndUpdate(
+    userId,
+    { $inc: { balance: amount } },
+    { new: true, runValidators: true },
+  );
+  if (!userToUpdate) {
+    const error = appError.create('User not found', 404, httpStatusText.FAIL);
+    return next(error);
+  }
+  res.status(200).json({
+    status: 'success',
+    data: { payment },
+  });
+  //send notification to the User to let hem know that the payment has been approved
+});
+
+exports.declinePayment = asyncWrapper(async (req, res, next) => {
+  const payment = await Payment.findByIdAndUpdate(
+    req.params.id,
+    { paymentStatus: 'declined' },
+    { new: true, runValidators: true },
+  );
+  if (!payment) {
+    const error = appError.create('Payment not found', 404, httpStatusText.FAIL);
+    return next(error);
+  }
+  res.status(200).json({
+    status: 'success',
+    data: { payment },
+  });
+  //send notification to the User to let him know that the payment has been declined
+});
 
 //For Dashboard (Reports)
-exports.getAllUsers = catchAsync(async (req, res, next) => {
+exports.getAllUsers = asyncWrapper(async (req, res, next) => {
   const users = await User.find({});
   if (!users) {
-    return next(appError('No users found', 404));
+    const error = appError.create('No users found', 404, httpStatusText.FAIL);
+    return next(error);
   }
   res.status(200).json({
     status: 'success',
     results: users.length,
     data: users
-  })
-})
+  });
+});
 
-
-exports.getUserById = catchAsync(async (req, res, next) => {
+exports.getUserById = asyncWrapper(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return next(appError('Invalid user ID', 400));
+    const error = appError.create('Invalid user ID', 400, httpStatusText.FAIL);
+    return next(error);
   }
   const user = await User.findById(req.params.id);
   if (!user) {
-    return next(appError('User not found', 404));
+    const error = appError.create('User not found', 404, httpStatusText.FAIL);
+    return next(error);
   }
   res.status(200).json({
     status: 'success',
     data: user
   });
-})
+});
 
-exports.getPropPrices = catchAsync(
-  async (req, res, next) => {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return next(appError('Invalid property ID', 400));
-    }
-    const property = await Property.findById(req.params.id);
-    if (!property) {
-      return next(appError('Property not found', 404));
-    }
-    const price = await property.price
-    res.status(200).json({
-      status: 'success',
-      data: {
-        price,
-      },
-    });
-  },
-);
-
+exports.getPropPrices = asyncWrapper(async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    const error = appError.create('Invalid property ID', 400, httpStatusText.FAIL);
+    return next(error);
+  }
+  const property = await Property.findById(req.params.id);
+  if (!property) {
+    const error = appError.create('Property not found', 404, httpStatusText.FAIL);
+    return next(error);
+  }
+  const price = await property.price;
+  res.status(200).json({
+    status: 'success',
+    data: { price },
+  });
+});
 
 //for Users
-exports.banUser = catchAsync(async (req, res, next) => {
+exports.banUser = asyncWrapper(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return next(appError('Invalid user ID', 400));
+    const error = appError.create('Invalid user ID', 400, httpStatusText.FAIL);
+    return next(error);
   }
   const user = await User.findByIdAndUpdate(
     req.params.id,
     { activity: 'Banned' },
     { new: true, runValidators: true },
   );
-  if (!user)
-    return next(appError('User not found', 404));
+  if (!user) {
+    const error = appError.create('User not found', 404, httpStatusText.FAIL);
+    return next(error);
+  }
   res.status(200).json({
     status: 'success',
-    data: {
-      user,
-    },
+    data: { user },
   });
+});
 
-})
-
-exports.unbanUser = catchAsync(async (req, res, next) => {
+exports.unbanUser = asyncWrapper(async (req, res, next) => {
   const user = await User.findByIdAndUpdate(
     req.params.id,
     { activity: 'active' },
     { new: true, runValidators: true },
   );
-  if (!user)
-    return next(new Error('User not found', 404));
+  if (!user) {
+    const error = appError.create('User not found', 404, httpStatusText.FAIL);
+    return next(error);
+  }
   res.status(200).json({
     status: 'success',
-    data: {
-      user,
-    },
+    data: { user },
   });
 });
+
 // for investments 
-
-
-exports.getAllInvestments = catchAsync(async (req, res, next) => {
+exports.getAllInvestments = asyncWrapper(async (req, res, next) => {
   const investments = await Investment.find({});
   if (!investments) {
-    return next(appError('No investments found', 404));
+    const error = appError.create('No investments found', 404, httpStatusText.FAIL);
+    return next(error);
   }
-
   res.status(200).json({
     status: 'success',
     results: investments.length,
     data: investments
-  })
-})
+  });
+});
 
-exports.getAllInvestmentsOnProperty = catchAsync(async (req, res) => {
+exports.getAllInvestmentsOnProperty = asyncWrapper(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return next(appError('Invalid property ID', 400));
+    const error = appError.create('Invalid property ID', 400, httpStatusText.FAIL);
+    return next(error);
   }
   const investments = await Investment.find({ propertyId: req.params.id });
-
   if (!investments) {
-    return res.status(404).json({ message: 'Investments not found' });
+    const error = appError.create('Investments not found', 404, httpStatusText.FAIL);
+    return next(error);
   }
-
   res.status(200).json({
     status: 'success',
     results: investments.length,
     data: investments
-  })
-})
+  });
+});
 
-exports.getAllUsersInvestedOnProperty = catchAsync(async (req, res, next) => {
+exports.getAllUsersInvestedOnProperty= asyncWrapper(async (req, res,next) => {
   const investments = await Investment.find({ propertyId: req.params.id });
   const users = await User.find({ _id: { $in: investments.map(investment => investment.userId) } });
-  if (!investments || !users) {
-    return next(appError('No investments or users found', 404));
+  if (!investments ||!users) {
+    const error = appError.create('No investments or users found', 404, httpStatusText.FAIL);
+    return next(error);
   }
   res.status(200).json({
     status: 'success',
     results: users.length,
     data: users
-  })
-})
+  });
+});
 
 
