@@ -2,6 +2,10 @@ const express = require('express');
 const adminController = require('../Controllers/adminController');
 const returnsController = require('../Controllers/returnsController');
 const router = express.Router();
+const {
+  verifyRefToken,
+  verifyToken,
+} = require('../Middlewares/verifyToken');
 //properties
 router
   .route('/properties')
@@ -49,6 +53,10 @@ router
 router
   .route('/users/unban/:id')
   .patch(adminController.unbanUser);
+
+router
+  .route('/users/getUserByEmail')
+  .get( verifyToken , adminController.getUserByEmail);
 
 //add payment to the returns
 router
