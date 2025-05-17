@@ -1,24 +1,33 @@
 const {
-    createPayment,
-    getPaymentStatus,
-    getHistory,
-    deletePayment,
-    getDepositHistory,
-    getWithdrawHistory
+  createPayment,
+  getPaymentStatus,
+  getHistory,
+  deletePayment,
+  getDepositHistory,
+  getWithdrawHistory,
 } = require('../Controllers/paymentController');
 
-
-const { authenticateAccessToken } = require("../Middlewares/authMiddleware")
-
+const {
+  verifyToken,
+} = require('../Middlewares/verifyToken');
 
 const express = require('express');
 const router = express.Router();
 
-router.post('/create', authenticateAccessToken, createPayment);
+router.post('/create', verifyToken, createPayment);
 router.get('/status/:id', getPaymentStatus);
-router.get('/history/', authenticateAccessToken, getHistory);
-router.delete('/:id', authenticateAccessToken, deletePayment);
-router.get('/getDepositHistory', authenticateAccessToken, getDepositHistory);
-router.get('/getWithdrawHistory', authenticateAccessToken, getWithdrawHistory);
+router.get('/history/', verifyToken, getHistory);
+router.delete('/:id', verifyToken, deletePayment);
+router.get(
+  '/getDepositHistory',
+  verifyToken,
+  getDepositHistory,
+);
+router.get(
+  '/getWithdrawHistory',
+  verifyToken,
+  getWithdrawHistory,
+);
 
 module.exports = router;
+

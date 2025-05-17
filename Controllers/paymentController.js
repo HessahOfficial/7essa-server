@@ -7,7 +7,7 @@ const moment = require('moment-timezone');
 const egyptTime = moment().tz('Africa/Cairo').format('hh:mm A');
 
 exports.createPayment = catchAsync(async (req, res) => {
-    userId = req.user.id;
+    let userId = req.currentUser.id;
     const { amount, paymentMethod, paymentType } = req.body;
 
     if (!userId || typeof userId !== 'string') {
@@ -73,7 +73,7 @@ exports.getPaymentStatus = catchAsync(async (req, res) => {
 
 exports.getHistory = catchAsync(async (req, res) => {
 
-    const userId = req.user.id;
+    const userId = req.currentUser.id;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -103,7 +103,7 @@ exports.deletePayment = catchAsync(async (req, res) => {
     if (!payment) {
         return res.status(404).json({ status: 'fail', message: 'Payment not found' });
     }
-    if (payment.userId.toString() !== req.user.id) {
+    if (payment.userId.toString() !== req.currentUser.id) {
         return res.status(403).json({ status: 'fail', message: 'Unauthorized to delete this payment' });
     }
     await Payment.findByIdAndDelete(paymentId);
@@ -113,7 +113,7 @@ exports.deletePayment = catchAsync(async (req, res) => {
 
 
 exports.getDepositHistory = catchAsync(async (req, res) => {
-    const userId = req.user.id;
+    const userId = req.currentUser.id;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -130,7 +130,7 @@ exports.getDepositHistory = catchAsync(async (req, res) => {
 );
 exports.getWithdrawHistory = catchAsync(async (req, res) => {
 
-    const userId = req.user.id;
+    const userId = req.currentUser.id;
 
     const user = await User.findById(userId);
     if (!user) {
