@@ -10,10 +10,11 @@ const investmentRouter = require('./Routes/investmentRoutes');
 const userRouter = require('./Routes/userRoutes');
 const paymentRouter = require('./Routes/paymentRoutes');
 const propertyRouter = require('./Routes/propertyRoutes');
-
-const { verifyToken } = require('./Middlewares/verifyToken');
-const  allowedTo  = require('./Middlewares/allowedTo');
-
+const {
+  allowedTo,
+  authenticateAccessToken,
+  authenticateRefreshToken,
+} = require('./Middlewares/authMiddleware');
 
 const userRoles = require('./utils/constants/userRoles');
 const httpStatusText = require('./utils/constants/httpStatusText');
@@ -39,8 +40,7 @@ app.get('/', (req, res) => {
 
 app.use(
   '/admin',
-  verifyToken,
-  allowedTo(userRoles.ADMIN),
+  authenticateRefreshToken,
   adminRouter,
 );
 app.use('/auth', authRouter);

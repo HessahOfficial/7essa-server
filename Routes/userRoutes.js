@@ -16,15 +16,11 @@ const {
   verifyToken,
 } = require('../Middlewares/verifyToken');
 
-router.get('/:id/favourites', getUserFavourites);
-router.post(
-  '/:id/favourites/:PropertyId',
-  addUserFavourites,
-);
-router.delete(
-  '/:id/favourites/:PropertyId',
-  deleteUserFavourites,
-);
+router.route("/favourites")
+    .get(getUserFavourites)
+    .post(addUserFavourites)
+    .delete(deleteUserFavourites);
+
 
 router.patch(
   '/update-image/:id',

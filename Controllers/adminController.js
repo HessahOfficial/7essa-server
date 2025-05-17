@@ -16,7 +16,7 @@ exports.getAllProperties = asyncWrapper(async(req,res,next)=>{
     return next(error);
   }
   res.status(200).json({
-    status:'success',
+    status: 'success',
     results: properties.length,
     data: properties
   });
@@ -69,7 +69,7 @@ exports.createProperty = asyncWrapper(async (req, res, next) => {
     return next(error);
   }
   const requiredFields = [
-    'title', 'description', 'city', 'size', 'numOfRooms', 'images', 'totalShares',
+    'title', 'description', 'city', 'size', 'numOfRooms', 'totalShares',
     'availableShares', 'price', 'pricePerShare', 'benefits', 'status', 'investmentDocs'
   ];
 
@@ -167,7 +167,7 @@ exports.getAllPayments = asyncWrapper(async (req, res, next) => {
     return next(error);
   }
   res.status(200).json({
-    status:'success',
+    status: 'success',
     results: payments.length,
     data: payments
   });
@@ -250,7 +250,7 @@ exports.getAllUsers = asyncWrapper(async (req, res, next) => {
     return next(error);
   }
   res.status(200).json({
-    status:'success',
+    status: 'success',
     results: users.length,
     data: users
   });
@@ -334,7 +334,7 @@ exports.getAllInvestments = asyncWrapper(async (req, res, next) => {
     return next(error);
   }
   res.status(200).json({
-    status:'success',
+    status: 'success',
     results: investments.length,
     data: investments
   });
@@ -351,7 +351,7 @@ exports.getAllInvestmentsOnProperty = asyncWrapper(async (req, res, next) => {
     return next(error);
   }
   res.status(200).json({
-    status:'success',
+    status: 'success',
     results: investments.length,
     data: investments
   });
@@ -365,7 +365,7 @@ exports.getAllUsersInvestedOnProperty= asyncWrapper(async (req, res,next) => {
     return next(error);
   }
   res.status(200).json({
-    status:'success',
+    status: 'success',
     results: users.length,
     data: users
   });

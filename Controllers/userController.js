@@ -5,7 +5,7 @@ const admin = require('../Config/firebase');
 
 exports.getUserFavourites = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { id } = req.query;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ error: 'Invalid user ID format' });
@@ -27,9 +27,9 @@ exports.getUserFavourites = async (req, res) => {
 
 exports.addUserFavourites = async (req, res) => {
     try {
-        const { id, PropertyId } = req.params;
+        const { id, propertyId } = req.query;
 
-        if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(PropertyId)) {
+        if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(propertyId)) {
             return res.status(400).json({ error: 'Invalid ID format' });
         }
 
@@ -38,16 +38,16 @@ exports.addUserFavourites = async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        if (user.favourites.includes(PropertyId)) {
+        if (user.favourites.includes(propertyId)) {
             return res.status(400).json({ error: 'Property already in favourites' });
         }
 
-        user.favourites.push(PropertyId);
+        user.favourites.push(propertyId);
         await user.save();
 
         res.status(200).json({
             status: 'success',
-            data: { favourites: user.favourites }
+            message: "One property saved successfully!"
         });
     } catch (err) {
         res.status(500).json({ error: 'Server error', message: err.message });
