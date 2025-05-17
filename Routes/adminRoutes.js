@@ -1,13 +1,14 @@
 const express = require('express');
 const adminController = require('../Controllers/adminController');
 const returnsController = require('../Controllers/returnsController');
+const { verifyToken } = require('../Middlewares/verifyToken');
 const allowedTo  = require('../Middlewares/allowedTo');
 const userRoles = require('../utils/constants/userRoles');
 const router = express.Router();
 //properties
 router
   .route('/properties')
-  .post(allowedTo(userRoles.ADMIN , userRoles.PARTNER), adminController.createProperty)
+  .post(verifyToken, allowedTo(userRoles.ADMIN , userRoles.PARTNER), adminController.createProperty)
   .get(adminController.getAllProperties);
 
 router

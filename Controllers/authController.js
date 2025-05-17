@@ -175,7 +175,7 @@ exports.signin = asyncWrapper(async (req, res, next) => {
         expiryTime: '7d',
       },
       '7d',
-      process.env.ACCESS_TOKEN_SECRET,
+      process.env.JWT_SECRET_ACCESS,
     );
     const refreshToken = await generateJWT({
       email: user.email,
@@ -711,7 +711,7 @@ const confirmEmail = asyncWrapper(
             expiryTime: '7d',
           },
           '7d',
-          process.env.ACCESS_TOKEN_SECRET,
+          process.env.JWT_SECRET_ACCESS,
         );
 
         const refreshToken = await generateJWT({
