@@ -18,6 +18,10 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
 
   if (property.isRented) {
     const numOfShares = req.body.numberOfShares;
+    if (numOfShares > property.totalShares) {
+      const error = appError.create('Number of shares exceeds total shares', 400, httpStatusText.FAIL);
+      return next(error);
+    }
     const sharePrice = property.pricePerShare[property.pricePerShare.length - 1];
     const monthlyReturns = (property.rentalIncome / property.totalShares) * numOfShares * 0.6;
     const annualReturns = monthlyReturns * 12;
