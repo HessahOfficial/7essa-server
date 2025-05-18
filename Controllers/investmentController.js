@@ -15,13 +15,12 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
     const error = appError.create('Property not found', 404, httpStatusText.FAIL);
     return next(error);
   }
-
-  if (property.isRented) {
-    const numOfShares = req.body.numberOfShares;
-    if (numOfShares > property.totalShares) {
+const numOfShares = req.body.numberOfShares;
+ if (numOfShares > property.totalShares) {
       const error = appError.create('Number of shares exceeds total shares', 400, httpStatusText.FAIL);
       return next(error);
     }
+  if (property.isRented) {
     const sharePrice = property.pricePerShare[property.pricePerShare.length - 1];
     const monthlyReturns = (property.rentalIncome / property.totalShares) * numOfShares * 0.6;
     const annualReturns = monthlyReturns * 12;
