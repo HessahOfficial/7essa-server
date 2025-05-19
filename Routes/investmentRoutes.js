@@ -7,10 +7,10 @@ const {
 const router = express.Router();
 
 router
-  .route('/make-investment/:id')
+  .route('/:id')
   .post(verifyToken, investmentController.makeInvestment);
 router
-  .route('/getInvestment/:id')
+  .route('/:id')
   .get(verifyToken, investmentController.getInvestmentById);
 router
   .route('/:id/property')
@@ -19,13 +19,13 @@ router
     investmentController.getInvestmentProperty,
   );
 router
-  .route('/getInvestments')
+  .route('/')
   .get(
     verifyToken,
     investmentController.getAllMyInvestments,
   );
 router
-  .route('/getInvestmentReturn/:id')
+  .route('/:id/returns')
   .get(
     verifyToken,
     investmentController.getMyreturnsOnInvestment,
