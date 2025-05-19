@@ -16,8 +16,8 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
     return next(error);
   }
 const numOfShares = req.body.numberOfShares;
- if (numOfShares > property.totalShares) {
-      const error = appError.create('Number of shares exceeds total shares', 400, httpStatusText.FAIL);
+ if (numOfShares > property.availableShares) {
+      const error = appError.create('Number of shares exceeds available shares', 400, httpStatusText.FAIL);
       return next(error);
     }
   if (property.isRented) {
@@ -28,6 +28,7 @@ const numOfShares = req.body.numberOfShares;
     const netGains = totalReturns - sharePrice;
     const totalSharesPercentage = (numOfShares / property.totalShares) * 100;
     const investmentAmount = sharePrice * numOfShares;
+    
 
     const investment = await Investment.create({
       userId: userId,
@@ -40,7 +41,10 @@ const numOfShares = req.body.numberOfShares;
       totalSharesPercentage: totalSharesPercentage,
       investmentAmount: investmentAmount,
     });
+     const updatedAvailableShares = property.availableShares - numOfShares;
+    await Property.findByIdAndUpdate(propertyId, { availableShares: updatedAvailableShares }, { new: true });
     return res.status(201).json({ investment: investment });
+     
   } else {
     const numOfShares = req.body.numberOfShares;
     const sharePrice = property.pricePerShare[property.pricePerShare.length - 1];
@@ -56,8 +60,12 @@ const numOfShares = req.body.numberOfShares;
       totalSharesPercentage: totalSharesPercentage,
       investmentAmount: investmentAmount,
     });
+    const updatedAvailableShares = property.availableShares - numOfShares;
+   await Property.findByIdAndUpdate(propertyId, { availableShares: updatedAvailableShares }, { new: true });
     return res.status(201).json({ investment: investment });
+      
   }
+
 });
 
 exports.getInvestmentById = asyncWrapper(async (req, res, next) => {
