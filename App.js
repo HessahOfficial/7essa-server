@@ -44,7 +44,7 @@ app.use(
   adminRouter,
 );
 app.use('/auth', authRouter);
-app.use('/investment', investmentRouter);
+app.use('/investments', investmentRouter);
 app.use('/users', userRouter);
 app.use('/payments', paymentRouter);
 app.use('/properties', propertyRouter);
