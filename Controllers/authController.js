@@ -573,7 +573,7 @@ const changeMyPassword = asyncWrapper(
       return next(error);
     }
     // check if new password is strong
-    if (password.length < 8) {
+    if (newPassword.length < 8) {
       const error = appError.create(
         'Password must be at least 8 characters or long',
         400,
