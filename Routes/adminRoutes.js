@@ -11,7 +11,7 @@ const {
 //properties
 router
   .route('/properties')
-  .post(allowedTo(userRoles.ADMIN), adminController.createProperty)
+  .post(adminController.createProperty)
   .get(adminController.getAllProperties);
 
 router

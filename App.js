@@ -40,6 +40,7 @@ app.get('/', (req, res) => {
 app.use(
   '/admin',
   verifyToken,
+  allowedTo(userRoles.ADMIN),
   adminRouter,
 );
 app.use('/auth', authRouter);
