@@ -232,15 +232,7 @@ exports.signin = asyncWrapper(async (req, res, next) => {
 
     await user.save();
 
-    const UserData = {
-      id: user._id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      username: user.username,
-      role: user.role,
-      avatar: user.avatar,
-    };
+    const UserData = user;
 
     return res.json({
       status: httpStatusText.SUCCESS,

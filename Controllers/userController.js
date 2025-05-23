@@ -5,13 +5,13 @@ const admin = require('../Config/firebase');
 
 exports.getUserFavourites = async (req, res) => {
     try {
-        const { id } = req.query;
+        const { userId } = req.params;
 
-        if (!mongoose.Types.ObjectId.isValid(id)) {
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
             return res.status(400).json({ error: 'Invalid user ID format' });
         }
 
-        const user = await User.findById(id).populate('favourites').lean();
+        const user = await User.findById(userId).populate('favourites').lean();
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -27,13 +27,13 @@ exports.getUserFavourites = async (req, res) => {
 
 exports.addUserFavourites = async (req, res) => {
     try {
-        const { id, propertyId } = req.query;
+        const { userId, propertyId } = req.params;
 
-        if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(propertyId)) {
+        if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(propertyId)) {
             return res.status(400).json({ error: 'Invalid ID format' });
         }
 
-        const user = await User.findById(id);
+        const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -56,22 +56,29 @@ exports.addUserFavourites = async (req, res) => {
 
 exports.deleteUserFavourites = async (req, res) => {
     try {
-        const { id, PropertyId } = req.params;
+        const { userId } = req.params;
+        const { properties } = req.body;
 
-        if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(PropertyId)) {
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
             return res.status(400).json({ error: 'Invalid ID format' });
         }
 
-        const user = await User.findById(id);
+        const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        if (!user.favourites.includes(PropertyId)) {
-            return res.status(400).json({ error: 'Property not in favourites' });
-        }
+        properties.forEach((propertyId) => {
+            if (!mongoose.Types.ObjectId.isValid(propertyId)) {
+                return res.status(400).json({ error: 'Invalid Property ID format' });
+            }
 
-        user.favourites = user.favourites.filter(fav => fav !== PropertyId);
+            if (!user.favourites.includes(propertyId)) {
+                return res.status(400).json({ error: 'Property not in favourites' });
+            }
+        });
+
+        user.favourites = user.favourites.filter(fav => !properties.includes(fav._id.toString()));
         await user.save();
 
         res.status(200).json({

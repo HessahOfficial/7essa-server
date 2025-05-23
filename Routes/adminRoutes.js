@@ -1,6 +1,8 @@
 const express = require('express');
 const adminController = require('../Controllers/adminController');
 const returnsController = require('../Controllers/returnsController');
+const allowedTo = require('../Middlewares/allowedTo');
+const userRoles = require('../utils/constants/userRoles');
 const router = express.Router();
 const {
   verifyRefToken,
@@ -9,7 +11,7 @@ const {
 //properties
 router
   .route('/properties')
-  .post(adminController.createProperty)
+  .post(allowedTo(userRoles.ADMIN), adminController.createProperty)
   .get(adminController.getAllProperties);
 
 router
@@ -56,7 +58,7 @@ router
 
 router
   .route('/users/getUserByEmail')
-  .get( verifyToken , adminController.getUserByEmail);
+  .get(verifyToken, adminController.getUserByEmail);
 
 //add payment to the returns
 router
