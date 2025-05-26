@@ -232,7 +232,18 @@ exports.signin = asyncWrapper(async (req, res, next) => {
 
     await user.save();
 
-    const UserData = user;
+    const UserData = {
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      fullName: user.fullName,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      username: user.username,
+      role: user.role,
+      avatar: user.avatar,
+      isInvestor: user.isInvestor,
+    };
 
     return res.json({
       status: httpStatusText.SUCCESS,
@@ -302,10 +313,13 @@ exports.refreshToken = asyncWrapper(
           id: foundUser._id,
           firstName: foundUser.firstName,
           lastName: foundUser.lastName,
+          fullName: foundUser.fullName,
           email: foundUser.email,
+          username: foundUser.username,
           phoneNumber: foundUser.phoneNumber,
           role: foundUser.role,
           avatar: foundUser.Image,
+          isInvestor: foundUser.isInvestor,
         };
         res.json({
           data: {
@@ -715,6 +729,19 @@ const confirmEmail = asyncWrapper(
           expiryTime: process.env.JWT_EXPIRES_IN_REFRESH,
         });
 
+        const UserData = {
+          id: foundUser._id,
+          firstName: foundUser.firstName,
+          lastName: foundUser.lastName,
+          fullName: foundUser.fullName,
+          email: foundUser.email,
+          username: foundUser.username,
+          phoneNumber: foundUser.phoneNumber,
+          role: foundUser.role,
+          avatar: foundUser.Image,
+          isInvestor: foundUser.isInvestor,
+        };
+
         res.status(200).json({
           status: httpStatusText.SUCCESS,
           data: {
@@ -722,7 +749,7 @@ const confirmEmail = asyncWrapper(
               refresh: refreshToken,
               access: accessToken,
             },
-            user: foundUser,
+            user: UserData,
           },
           message: 'Email verified successfully',
         });

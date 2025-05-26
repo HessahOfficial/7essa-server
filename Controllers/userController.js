@@ -106,7 +106,7 @@ exports.addImage = async (req, res) => {
 
         res.status(200).json({
             message: 'Photo uploaded successfully',
-            user: updatedUser,
+            user: updatedUser, // FIXME: Send Public UserData 
         });
     } catch (error) {
         res.status(500).json({ error: 'Photo upload failed', message: error.message });
@@ -155,7 +155,7 @@ exports.updateUser = async (req, res) => {
 
         res.status(200).json({
             message: 'User updated successfully',
-            user: updatedUser,
+            user: updatedUser, // FIXME: Send Public UserData
         });
 
     } catch (error) {
@@ -179,7 +179,7 @@ exports.deleteUser = async (req, res) => {
 
         res.status(200).json({
             message: 'User deleted successfully',
-            user: deletedUser,
+            user: deletedUser, // FIXME: Send Public UserData
         });
 
     } catch (error) {
