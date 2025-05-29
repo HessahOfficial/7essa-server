@@ -11,6 +11,10 @@ const {
   addImage,
   sendPushNotificationToAll,
   sendPushNotificationToUser,
+  getUserInformation,
+  showBalance,
+  changePinCode,
+  becomeInvestor,
 } = require('../Controllers/userController');
 const {
   verifyToken,
@@ -23,6 +27,17 @@ router.route("/:userId/favourites")
   .get(getUserFavourites)
   .delete(deleteUserFavourites);
 
+router.route("/:userId")
+  .get(getUserInformation);
+
+router.route("/balance/:userId")
+  .post(showBalance);
+
+router.route("/pin/:userId")
+  .post(changePinCode);
+
+router.route("/investor/:userId")
+  .post(becomeInvestor);
 
 router.patch(
   '/update-image/:id',

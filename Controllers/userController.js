@@ -2,6 +2,9 @@ const User = require("../Models/userModel");
 const validator = require('validator');
 const mongoose = require('mongoose');
 const admin = require('../Config/firebase');
+const asyncWrapper = require("../Middlewares/asyncWrapper");
+const appError = require("../utils/appError");
+const httpStatusText = require("../utils/constants/httpStatusText");
 
 exports.getUserFavourites = async (req, res) => {
     try {
@@ -223,3 +226,242 @@ exports.sendPushNotificationToAll = async (req, res) => {
         res.status(500).json({ success: false, message: "Failed to send notification", error });
     }
 };
+
+exports.getUserInformation = asyncWrapper(async (req, res, next) => {
+
+    const { userId } = req.params;
+
+    if (!userId) {
+        const error = appError.create(
+            "User id is required as a parameter!",
+            400,
+            httpStatusText.ERROR
+        );
+        return next(error);
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        const error = appError.create(
+            "Invalid user Id  format!",
+            400,
+            httpStatusText.ERROR
+        );
+        return next(error);
+    }
+
+    const oldUser = await User.findById(userId);
+    if (!oldUser) {
+        const error = appError.create(
+            "User not found!",
+            404,
+            httpStatusText.ERROR
+        );
+        return next(error);
+    }
+
+    const user = {
+        username: oldUser.username,
+        phoneNumber: oldUser.phoneNumber,
+        email: oldUser.email,
+        avatar: oldUser.avatar
+    };
+
+    res.status(200).json({
+        status: httpStatusText.SUCCESS,
+        message: "User info is retrieved successfully!",
+        data: {
+            user
+        }
+    });
+});
+
+exports.showBalance = asyncWrapper(async (req, res, next) => {
+
+    const { userId } = req.params;
+    const { pin } = req.body;
+
+    if (!userId) {
+        const error = appError.create(
+            "User id is required as a parameter!",
+            400,
+            httpStatusText.ERROR
+        );
+        return next(error);
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        const error = appError.create(
+            "Invalid user Id  format!",
+            400,
+            httpStatusText.ERROR
+        );
+        return next(error);
+    }
+
+    const oldUser = await User.findById(userId);
+    if (!oldUser) {
+        const error = appError.create(
+            "User not found!",
+            404,
+            httpStatusText.ERROR
+        );
+        return next(error);
+    }
+
+    if (!pin) {
+        const error = appError.create(
+            "PIN Code id is required!",
+            400,
+            httpStatusText.FAIL
+        );
+        return next(error);
+    }
+
+    if (pin.toString().length != 6) {
+        const error = appError.create(
+            "PIN Code consists of 6 digits",
+            400,
+            httpStatusText.FAIL
+        );
+        return next(error);
+    }
+
+    if (oldUser.pin.toString() !== pin.toString()) {
+        const error = appError.create(
+            "Incorrect PIN Code!",
+            400,
+            httpStatusText.FAIL
+        );
+        return next(error);
+    }
+
+    res.status(200).json({
+        status: httpStatusText.SUCCESS,
+        message: "Valid PIN Code!",
+        data: {
+            "balance": oldUser.balance
+        }
+    });
+})
+
+exports.changePinCode = asyncWrapper(async (req, res, next) => {
+
+    const { userId } = req.params;
+    const { pin } = req.body;
+
+    if (!userId) {
+        const error = appError.create(
+            "User id is required as a parameter!",
+            400,
+            httpStatusText.ERROR
+        );
+        return next(error);
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        const error = appError.create(
+            "Invalid user Id format!",
+            400,
+            httpStatusText.ERROR
+        );
+        return next(error);
+    }
+
+    const oldUser = await User.findById(userId);
+    if (!oldUser) {
+        const error = appError.create(
+            "User not found!",
+            404,
+            httpStatusText.ERROR
+        );
+        return next(error);
+    }
+
+    if (!pin) {
+        const error = appError.create(
+            "PIN Code id is required!",
+            400,
+            httpStatusText.FAIL
+        );
+        return next(error);
+    }
+
+    if (pin.toString().length != 6) {
+        const error = appError.create(
+            "PIN Code consists of 6 digits",
+            400,
+            httpStatusText.FAIL
+        );
+        return next(error);
+    }
+
+    if (oldUser.pin.toString() === pin.toString()) {
+        const error = appError.create(
+            "Similar to the old one. Try another PIN Code!",
+            400,
+            httpStatusText.FAIL
+        );
+        return next(error);
+    }
+
+    oldUser.pin = pin;
+
+    await oldUser.save();
+
+    res.status(200).json({
+        status: httpStatusText.SUCCESS,
+        message: "PIN Code changed successfully!"
+    });
+});
+
+exports.becomeInvestor = asyncWrapper(async (req, res, next) => {
+
+    const { userId } = req.params;
+    const { nationalId } = req.body;
+
+    if (!userId) {
+        const error = appError.create(
+            "User id is required as a parameter!",
+            400,
+            httpStatusText.ERROR
+        );
+        return next(error);
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        const error = appError.create(
+            "Invalid user Id format!",
+            400,
+            httpStatusText.ERROR
+        );
+        return next(error);
+    }
+
+    const oldUser = await User.findById(userId);
+    if (!oldUser) {
+        const error = appError.create(
+            "User not found!",
+            404,
+            httpStatusText.ERROR
+        );
+        return next(error);
+    }
+
+    if (!nationalId) {
+        const error = appError.create(
+            "National ID is required!",
+            400,
+            httpStatusText.ERROR
+        )
+    }
+
+    oldUser.nationalId = nationalId;
+    oldUser.isInvestor = true;
+
+    await oldUser.save();
+
+    res.status(200).json({
+        status: httpStatusText.SUCCESS,
+        message: "Congratulations. you ara an investor!"
+    });
+});
