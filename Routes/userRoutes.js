@@ -20,24 +20,26 @@ const {
   verifyToken,
 } = require('../Middlewares/verifyToken');
 
+const allowedToSameUserAnd = require("../Middlewares/allowedToSameUserAnd");
+
 router.route("/:userId/favourites/:propertyId")
-  .post(addUserFavourites);
+  .post(allowedToSameUserAnd(), addUserFavourites);
 
 router.route("/:userId/favourites")
-  .get(getUserFavourites)
-  .delete(deleteUserFavourites);
+  .get(allowedToSameUserAnd(), getUserFavourites)
+  .delete(allowedToSameUserAnd(), deleteUserFavourites);
 
 router.route("/:userId")
-  .get(getUserInformation);
+  .get(allowedToSameUserAnd(), getUserInformation);
 
 router.route("/balance/:userId")
-  .post(showBalance);
+  .post(allowedToSameUserAnd(), showBalance);
 
 router.route("/pin/:userId")
-  .post(changePinCode);
+  .post(allowedToSameUserAnd(), changePinCode);
 
 router.route("/investor/:userId")
-  .post(becomeInvestor);
+  .post(allowedToSameUserAnd(), becomeInvestor);
 
 router.patch(
   '/update-image/:id',
