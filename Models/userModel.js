@@ -48,7 +48,7 @@ const userSchema = new mongoose.Schema(
         'https://www.viverefermo.it/images/user.png',
     },
     pin: {
-      type: Number,
+      type: String,
       length: 6,
       default: 123456,
     },

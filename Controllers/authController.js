@@ -243,6 +243,7 @@ exports.signin = asyncWrapper(async (req, res, next) => {
       role: user.role,
       avatar: user.avatar,
       isInvestor: user.isInvestor,
+      favourites: user.favourites
     };
 
     return res.json({

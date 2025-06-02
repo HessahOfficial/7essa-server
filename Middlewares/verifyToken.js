@@ -3,6 +3,7 @@ const appError = require('../utils/appError');
 const httpStatusText = require('../utils/constants/httpStatusText');
 
 const verifyToken = (req, res, next) => {
+    console.log("in verifyToken")
     const authHeader = req.headers['Authorization'] || req.headers['authorization'];
     if(!authHeader) {
         const error = appError.create('Token is required', 401, httpStatusText.ERROR)
@@ -23,7 +24,7 @@ const verifyToken = (req, res, next) => {
 
 const verifyRefToken = (req, res, next) => {
     const authHeader = req.headers['Authorization'] || req.headers['authorization'];
-    if(!authHeader) {
+    if (!authHeader) {
         const error = appError.create('Token is required', 401, httpStatusText.ERROR)
         return next(error);
     }
@@ -37,7 +38,7 @@ const verifyRefToken = (req, res, next) => {
     } catch (err) {
         const error = appError.create('Invalid token', 401, httpStatusText.ERROR)
         return next(error);
-    }   
+    }
 }
 module.exports = {
     verifyToken,

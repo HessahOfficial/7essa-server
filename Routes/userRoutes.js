@@ -11,18 +11,35 @@ const {
   addImage,
   sendPushNotificationToAll,
   sendPushNotificationToUser,
+  getUserInformation,
+  showBalance,
+  changePinCode,
+  becomeInvestor,
 } = require('../Controllers/userController');
 const {
   verifyToken,
 } = require('../Middlewares/verifyToken');
 
+const allowedToSameUserAnd = require("../Middlewares/allowedToSameUserAnd");
+
 router.route("/:userId/favourites/:propertyId")
-  .post(addUserFavourites);
+  .post(allowedToSameUserAnd(), addUserFavourites);
 
 router.route("/:userId/favourites")
-  .get(getUserFavourites)
-  .delete(deleteUserFavourites);
+  .get(allowedToSameUserAnd(), getUserFavourites)
+  .delete(allowedToSameUserAnd(), deleteUserFavourites);
 
+router.route("/:userId")
+  .get(allowedToSameUserAnd(), getUserInformation);
+
+router.route("/balance/:userId")
+  .post(allowedToSameUserAnd(), showBalance);
+
+router.route("/pin/:userId")
+  .post(allowedToSameUserAnd(), changePinCode);
+
+router.route("/investor/:userId")
+  .post(allowedToSameUserAnd(), becomeInvestor);
 
 router.patch(
   '/update-image/:id',
