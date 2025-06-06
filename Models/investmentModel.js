@@ -24,6 +24,11 @@ const investmentSchema = new mongoose.Schema({
     default: Date.now,
     required: [true, 'investment date is required'],
   },
+  lastPaymentDate: {
+    type: Date,
+    default: Date.now,
+    required: [true, 'last payment date is required'],
+  },
 
   annualReturns: {
     default: 0,
