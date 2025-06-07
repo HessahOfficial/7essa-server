@@ -7,6 +7,7 @@ const Returns = require("../Models/returnsModel");
 const Investment = require("../Models/investmentModel");
 const mongoose = require("mongoose");
 const httpStatusText = require('../utils/constants/httpStatusText');
+const USER_ACTIVITY = require('../utils/constants/USER_ACTIVITY');
 
 //For properties
 exports.getAllProperties = asyncWrapper(async(req,res,next)=>{
@@ -63,6 +64,16 @@ exports.createProperty = asyncWrapper(async (req, res, next) => {
     status,
     investmentDocs
   } = req.body;
+  const ownerId = req.currentUser._id;
+  if (!ownerId) {
+    const error = appError.create('User not authenticated', 401, httpStatusText.FAIL);
+    return next(error);
+  }
+  const owner = await User.findById(ownerId);
+  if (!owner) {
+    const error = appError.create('Owner not found', 404, httpStatusText.FAIL);
+    return next(error);
+  }
   const titleExist = await Property.findOne({ title: title });
   if (titleExist) {
     const error = appError.create('Property Title already exists', 400, httpStatusText.FAIL);
@@ -112,6 +123,7 @@ exports.createProperty = asyncWrapper(async (req, res, next) => {
     rentalEndDate,
     benefits,
     managementCompany,
+    owner: ownerId,
     status,
     investmentDocs
   });
@@ -316,7 +328,7 @@ exports.banUser = asyncWrapper(async (req, res, next) => {
   }
   const user = await User.findByIdAndUpdate(
     req.params.id,
-    { activity: 'Banned' },
+    { activity: USER_ACTIVITY.BANNED },
     { new: true, runValidators: true },
   );
   if (!user) {
@@ -332,7 +344,7 @@ exports.banUser = asyncWrapper(async (req, res, next) => {
 exports.unbanUser = asyncWrapper(async (req, res, next) => {
   const user = await User.findByIdAndUpdate(
     req.params.id,
-    { activity: 'active' },
+    { activity: USER_ACTIVITY.ACTIVE },
     { new: true, runValidators: true },
   );
   if (!user) {
