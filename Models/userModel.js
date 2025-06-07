@@ -39,10 +39,7 @@ const userSchema = new mongoose.Schema(
     phoneNumber: { type: Number },
     email_verification_code: { type: Number },
     email_verification_code_expires: { type: Date },
-    Image: {
-      type: String,
-      default: 'https://www.viverefermo.it/images/user.png',
-    },
+
     avatar: {
       type: String,
       default:

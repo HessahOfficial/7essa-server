@@ -128,7 +128,7 @@ exports.deleteUserFavourites = async (req, res) => {
   }
 };
 
-exports.addImage = async (req, res) => {
+exports.addAvatar = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -144,7 +144,7 @@ exports.addImage = async (req, res) => {
         .json({ error: 'No photo uploaded' });
     }
 
-    const updatedUser = await exports.updateUserPhoto(
+    const updatedUser = await exports.updateUserAvatar(
       id,
       req.file.path,
     );
@@ -161,10 +161,10 @@ exports.addImage = async (req, res) => {
   }
 };
 
-exports.updateUserPhoto = async (userId, imageUrl) => {
+exports.updateUserAvatar = async (userId, imageUrl) => {
   const updatedUser = await User.findByIdAndUpdate(
     userId,
-    { profilePic: imageUrl },
+    { avatar: imageUrl },
     { new: true },
   );
 

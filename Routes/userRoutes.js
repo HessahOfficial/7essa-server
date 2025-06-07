@@ -8,7 +8,7 @@ const {
   getUserFavourites,
   addUserFavourites,
   deleteUserFavourites,
-  addImage,
+  addAvatar,
   sendPushNotificationToAll,
   sendPushNotificationToUser,
   getUserInformation,
@@ -41,11 +41,11 @@ router.route("/pin/:userId")
 router.route("/investor/:userId")
   .post(allowedToSameUserAnd(), becomeInvestor);
 
-router.patch(
-  '/update-image/:id',
+router.post(
+  '/updateAvatar/:id',
   verifyToken,
-  upload.single('photo'),
-  addImage,
+  upload.single('avatar'),
+  addAvatar,
 );
 router.patch('/updateUser/:id', verifyToken, updateUser);
 
