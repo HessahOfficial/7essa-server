@@ -75,6 +75,10 @@ const propertySchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  displayingPrice: {
+    type: String,
+    default: '2000 LE/Share',
+  },
   numOfBeds: {
     type: Number,
     default: 0,
@@ -94,6 +98,10 @@ const propertySchema = new mongoose.Schema({
   managementCompany: {
     type: String,
   },
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
   status: {
     type: String,
     required: [true, 'property status is required'],
@@ -106,6 +114,16 @@ const propertySchema = new mongoose.Schema({
       'Property must have the investment documents',
     ],
   },
+});
+
+propertySchema.pre('save', function (next) {
+  // Ensure that the displayingPrice is set based on the pricePerShare
+  if (this.pricePerShare && this.pricePerShare.length > 0) {
+    this.displayingPrice = `${this.pricePerShare[0]} LE/Share`;
+  } else {
+    this.displayingPrice = '2000 LE/Share'; // Default value if pricePerShare is not set
+  }
+  next();
 });
 
 const Property = mongoose.model('Property', propertySchema);

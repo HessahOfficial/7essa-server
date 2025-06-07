@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const userRoles = require('../utils/constants/userRoles');
+const USER_ACTIVITY = require('../utils/constants/USER_ACTIVITY');
 
 const userSchema = new mongoose.Schema(
   {
@@ -32,8 +33,8 @@ const userSchema = new mongoose.Schema(
     },
     activity: {
       type: String,
-      enum: ['active', 'inactive', 'Banned'],
-      default: 'active',
+      enum: Object.values(USER_ACTIVITY),
+      default: USER_ACTIVITY.ACTIVE,
     },
     phoneNumber: { type: Number },
     email_verification_code: { type: Number },
