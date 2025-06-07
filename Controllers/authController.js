@@ -296,9 +296,9 @@ exports.refreshToken = asyncWrapper(
         }
         const accessToken = await generateJWT(
           {
-            email: user.email,
-            id: user.id,
-            role: user.role,
+            email: foundUser.email,
+            id: foundUser.id,
+            role: foundUser.role,
             expiryTime: process.env.JWT_EXPIRES_IN_ACCESS,
           },
           process.env.JWT_EXPIRES_IN_ACCESS,
@@ -306,8 +306,8 @@ exports.refreshToken = asyncWrapper(
         );
 
         const refreshToken = await generateJWT({
-          email: user.email,
-          id: user.id,
+          email: foundUser.email,
+          id: foundUser.id,
           expiryTime: process.env.JWT_EXPIRES_IN_REFRESH,
         });
         const UserData = {
