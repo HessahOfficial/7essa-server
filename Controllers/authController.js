@@ -4,11 +4,9 @@ dotenv.config();
 const bcrypt = require('bcryptjs');
 const passport = require('passport');
 const mongoose = require('mongoose');
-const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 
 const User = require('../Models/userModel');
-const Token = require('../Models/tokenModel');
 
 const Email = require('../utils/email');
 const appError = require('../utils/appError');
@@ -16,11 +14,6 @@ const generateJWT = require('../utils/generateJWT');
 const httpStatusText = require('../utils/constants/httpStatusText');
 
 const asyncWrapper = require('../Middlewares/asyncWrapper');
-
-const {
-  generateAccessToken,
-  generateRefreshToken,
-} = require('../utils/jwt');
 
 exports.signup = asyncWrapper(async (req, res, next) => {
   const session = await mongoose.startSession();
@@ -81,21 +74,23 @@ exports.signup = asyncWrapper(async (req, res, next) => {
     newUser.ID_Verified = false;
 
     await newUser.save({ session });
-    const accessToken = generateAccessToken(
-      newUser._id,
-      newUser.role,
-    );
-    const refreshToken = generateRefreshToken(
-      newUser._id,
-      newUser.role,
-    );
-    const newToken = new Token({
-      userId: newUser._id,
-      refreshToken,
-      role: newUser.role,
-    });
+    const accessToken = await generateJWT(
+          {
+            email: newUser.email,
+            id: newUser.id,
+            role: newUser.role,
+            expiryTime: process.env.JWT_EXPIRES_IN_ACCESS,
+          },
+          process.env.JWT_EXPIRES_IN_ACCESS,
+          process.env.JWT_SECRET_ACCESS,
+        );
 
-    await newToken.save({ session });
+        const refreshToken = await generateJWT({
+          email: newUser.email,
+          id: newUser.id,
+          expiryTime: process.env.JWT_EXPIRES_IN_REFRESH,
+        });
+    
     await session.commitTransaction();
     session.endSession();
     res.status(201).json({
@@ -381,27 +376,23 @@ exports.googleAuthCallback = async (req, res, next) => {
           return next(err);
         }
 
-        const tokenInDb = await Token.findOne({
-          userId: user._id,
-        });
-        if (tokenInDb) {
-          await Token.deleteOne({ userId: user._id });
-        }
+        const accessToken = await generateJWT(
+          {
+            email: user.email,
+            id: user._id,
+            role: user.role,
+            expiryTime: process.env.JWT_EXPIRES_IN_ACCESS,
+          },
+          process.env.JWT_EXPIRES_IN_ACCESS,
+          process.env.JWT_SECRET_ACCESS,
+        );
 
-        const accessToken = generateAccessToken(
-          user._id,
-          user.role,
-        );
-        const refreshToken = generateRefreshToken(
-          user._id,
-          user.role,
-        );
-        newToken = new Token({
-          userId: user._id,
-          role: user.role,
-          refreshToken,
+        const refreshToken = await generateJWT({
+          email: user.email,
+          id: user._id,
+          expiryTime: process.env.JWT_EXPIRES_IN_REFRESH,
         });
-        await newToken.save();
+
         res.json({
           status: 'success',
           data: {
