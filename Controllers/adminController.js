@@ -136,23 +136,35 @@ exports.createProperty = asyncWrapper(async (req, res, next) => {
 
 exports.updateProperty = asyncWrapper(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    const error = appError.create('Invalid property ID', 400, httpStatusText.FAIL);
-    return next(error);
+    return next(appError.create('Invalid property ID', 400, httpStatusText.FAIL));
   }
-  const property = await Property.findByIdAndUpdate(
-    req.params.id,
-    req.body,
-    { new: true, runValidators: true },
-  );
+
+  const property = await Property.findById(req.params.id);
   if (!property) {
-    const error = appError.create('Property not found', 404, httpStatusText.FAIL);
-    return next(error);
+    return next(appError.create('Property not found', 404, httpStatusText.FAIL));
   }
-  res.status(200).json({
+
+  if (typeof req.body.price === 'number') {
+    property.price.push(req.body.price);
+    delete req.body.price; 
+  }
+
+  if (typeof req.body.pricePerShare === 'number') {
+    property.pricePerShare.push(req.body.pricePerShare);
+    delete req.body.pricePerShare;
+  }
+  Object.keys(req.body).forEach(key => {
+    property[key] = req.body[key];
+  });
+
+  await property.save();
+
+  return res.status(200).json({
     status: 'success',
     data: property
   });
 });
+
 
 exports.deleteProperty = asyncWrapper(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {

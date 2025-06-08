@@ -13,61 +13,84 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
   const user = await User.findById(userId);
 
   if (!property) {
-    const error = appError.create('Property not found', 404, httpStatusText.FAIL);
-    return next(error);
+    return next(appError.create('Property not found', 404, httpStatusText.FAIL));
   }
-const numOfShares = req.body.numberOfShares;
-const sharePrice = property.pricePerShare[property.pricePerShare.length - 1];
 
- if (numOfShares > property.availableShares) {
-      const error = appError.create('Number of shares exceeds available shares', 400, httpStatusText.FAIL);
-      return next(error);
-    }
-  if (user.balance < sharePrice * numOfShares) {
-    const error = appError.create('Insufficient balance to make this investment', 400, httpStatusText.FAIL);
-    return next(error);
+  const numOfShares = req.body.numberOfShares;
+  const sharePrice = property.pricePerShare[property.pricePerShare.length - 1];
+
+  if (numOfShares > property.availableShares) {
+    return next(appError.create('Number of shares exceeds available shares', 400, httpStatusText.FAIL));
   }
+
+  const investmentAmount = sharePrice * numOfShares;
+  if (user.balance < investmentAmount) {
+    return next(appError.create('Insufficient balance to make this investment', 400, httpStatusText.FAIL));
+  }
+
+  let existingInvestment = await Investment.findOne({ userId, propertyId });
+
+  const updatedAvailableShares = property.availableShares - numOfShares;
+  await Property.findByIdAndUpdate(propertyId, { availableShares: updatedAvailableShares });
 
   if (property.isRented) {
     const monthlyReturns = (property.rentalIncome / property.totalShares) * numOfShares * 0.6;
     const annualReturns = monthlyReturns * 12;
     const totalReturns = 0;
-    const investmentAmount = sharePrice * numOfShares;
     const netGains = totalReturns - investmentAmount;
-    const totalSharesPercentage = (numOfShares / property.totalShares) * 100;
-    const investment = await Investment.create({
-      userId: userId,
-      propertyId: req.params.id,
-      numOfShares: numOfShares,
-      sharePrice: sharePrice,
-      monthlyReturns: monthlyReturns,
-      annualReturns: annualReturns,
-      netGains: netGains,
-      totalSharesPercentage: totalSharesPercentage,
-      investmentAmount: investmentAmount,
-    });
-     const updatedAvailableShares = property.availableShares - numOfShares;
-    await Property.findByIdAndUpdate(propertyId, { availableShares: updatedAvailableShares }, { new: true });
-    return res.status(201).json({ investment: investment });
-     
+    const totalSharesPercentage = ((existingInvestment?.numOfShares || 0) + numOfShares) / property.totalShares * 100;
+
+    if (existingInvestment) {
+      existingInvestment.numOfShares += numOfShares;
+      existingInvestment.investmentAmount += investmentAmount;
+      existingInvestment.monthlyReturns += monthlyReturns;
+      existingInvestment.annualReturns += annualReturns;
+      existingInvestment.totalSharesPercentage = totalSharesPercentage;
+      existingInvestment.netGains += netGains;
+      await existingInvestment.save();
+      return res.status(200).json({ investment: existingInvestment });
+    } else {
+      // Create a new investment
+      const investment = await Investment.create({
+        userId,
+        propertyId,
+        numOfShares,
+        SharePrice: sharePrice,
+        monthlyReturns,
+        annualReturns,
+        netGains,
+        totalSharesPercentage,
+        investmentAmount,
+      });
+      return res.status(201).json({ investment });
+    }
+
   } else {
-    const netGains = property.priceSold - sharePrice * numOfShares;
-    const investmentAmount = sharePrice * numOfShares;
-    const totalSharesPercentage = (numOfShares / property.totalShares) * 100;
-    const investment = await Investment.create({
-      userId: userId,
-      propertyId: req.params.id,
-      numOfShares: numOfShares,
-      sharePrice: sharePrice,
-      netGains: netGains,
-      totalSharesPercentage: totalSharesPercentage,
-      investmentAmount: investmentAmount,
-    });
-    const updatedAvailableShares = property.availableShares - numOfShares;
-   await Property.findByIdAndUpdate(propertyId, { availableShares: updatedAvailableShares }, { new: true });
-    return res.status(201).json({ investment: investment });
+    const netGains = property.priceSold - investmentAmount;
+    const totalSharesPercentage = ((existingInvestment?.numOfShares || 0) + numOfShares) / property.totalShares * 100;
+
+    if (existingInvestment) {
+      existingInvestment.numOfShares += numOfShares;
+      existingInvestment.investmentAmount += investmentAmount;
+      existingInvestment.netGains += netGains;
+      existingInvestment.totalSharesPercentage = totalSharesPercentage;
+      await existingInvestment.save();
+      return res.status(200).json({ investment: existingInvestment });
+    } else {
+      const investment = await Investment.create({
+        userId,
+        propertyId,
+        numOfShares,
+        SharePrice: sharePrice,
+        netGains,
+        totalSharesPercentage,
+        investmentAmount,
+      });
+      return res.status(201).json({ investment });
+    }
   }
-  });
+});
+
 
 
 
