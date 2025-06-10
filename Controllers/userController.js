@@ -198,6 +198,7 @@ exports.updateUser = async (req, res) => {
       'role',
       'balance',
       'emailVerified',
+      'email'
     ];
     restrictedFields.forEach(
       (field) => delete updateData[field],
