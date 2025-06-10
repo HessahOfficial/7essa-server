@@ -198,6 +198,7 @@ exports.updateUser = async (req, res) => {
       'role',
       'balance',
       'emailVerified',
+      'email'
     ];
     restrictedFields.forEach(
       (field) => delete updateData[field],
@@ -351,6 +352,9 @@ exports.getUserInformation = asyncWrapper(
 
     const user = {
       username: oldUser.username,
+      firstname: oldUser.firstName,
+      lastname: oldUser.lastName,
+      fullname: oldUser.fullName,
       phoneNumber: oldUser.phoneNumber,
       email: oldUser.email,
       avatar: oldUser.avatar,
