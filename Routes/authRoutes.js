@@ -17,7 +17,7 @@ router.route('/verify-email')
 router.route('/confirm-email')
   .post(authController.confirmEmail)
 
-router.get('/refresh-token', verifyToken, authController.refreshToken);
+router.get('/refresh-token', verifyRefToken, authController.refreshToken);
 
 router.get('/google', authController.googleAuth);
 
