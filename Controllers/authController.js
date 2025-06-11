@@ -75,22 +75,22 @@ exports.signup = asyncWrapper(async (req, res, next) => {
 
     await newUser.save({ session });
     const accessToken = await generateJWT(
-          {
-            email: newUser.email,
-            id: newUser.id,
-            role: newUser.role,
-            expiryTime: process.env.JWT_EXPIRES_IN_ACCESS,
-          },
-          process.env.JWT_EXPIRES_IN_ACCESS,
-          process.env.JWT_SECRET_ACCESS,
-        );
+      {
+        email: newUser.email,
+        id: newUser.id,
+        role: newUser.role,
+        expiryTime: process.env.JWT_EXPIRES_IN_ACCESS,
+      },
+      process.env.JWT_EXPIRES_IN_ACCESS,
+      process.env.JWT_SECRET_ACCESS,
+    );
 
-        const refreshToken = await generateJWT({
-          email: newUser.email,
-          id: newUser.id,
-          expiryTime: process.env.JWT_EXPIRES_IN_REFRESH,
-        });
-    
+    const refreshToken = await generateJWT({
+      email: newUser.email,
+      id: newUser.id,
+      expiryTime: process.env.JWT_EXPIRES_IN_REFRESH,
+    });
+
     await session.commitTransaction();
     session.endSession();
     res.status(201).json({
@@ -267,7 +267,7 @@ exports.signin = asyncWrapper(async (req, res, next) => {
  */
 exports.refreshToken = asyncWrapper(
   async (req, res, next) => {
-    const refreshToken = req.refreshToken;
+    const { refreshToken } = req.body;
     jwt.verify(
       refreshToken,
       process.env.JWT_SECRET_REFRESH,

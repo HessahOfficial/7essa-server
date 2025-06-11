@@ -12,12 +12,12 @@ router.post('/signup', authController.signup);
 router.post('/signin', authController.signin);
 
 router.route('/verify-email')
-            .post(authController.verifyEmail)
+  .post(authController.verifyEmail)
 
 router.route('/confirm-email')
-            .post(authController.confirmEmail)
+  .post(authController.confirmEmail)
 
-router.get('/refresh-token', verifyRefToken, authController.refreshToken);
+router.get('/refresh-token', verifyToken, authController.refreshToken);
 
 router.get('/google', authController.googleAuth);
 
@@ -30,7 +30,7 @@ router.post('/forgot-password', authController.forgetPassword);
 router.post('/reset-password', authController.ResetPassword);
 
 router.route('/change-my-password')
-            .post(verifyToken, authController.changeMyPassword)
+  .post(verifyToken, authController.changeMyPassword)
 
 
 module.exports = router;
