@@ -31,12 +31,6 @@ app.use(
   }),
 );
 
-// logger for test 
-app.use((req, res, next) => {
-  console.log("Origin :" , req.headers.origin);
-  next();
-})
-
 app.use(passport.initialize());
 app.use(passport.session());
 app.get('/', (req, res) => {
