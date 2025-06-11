@@ -314,7 +314,7 @@ exports.refreshToken = asyncWrapper(
           username: foundUser.username,
           phoneNumber: foundUser.phoneNumber,
           role: foundUser.role,
-          avatar: foundUser.Image,
+          avatar: foundUser.avatar,
           isInvestor: foundUser.isInvestor,
         };
         res.json({
@@ -730,7 +730,7 @@ const confirmEmail = asyncWrapper(
           username: foundUser.username,
           phoneNumber: foundUser.phoneNumber,
           role: foundUser.role,
-          avatar: foundUser.Image,
+          avatar: foundUser.avatar,
           isInvestor: foundUser.isInvestor,
         };
 
