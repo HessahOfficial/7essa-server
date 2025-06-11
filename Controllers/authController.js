@@ -267,7 +267,7 @@ exports.signin = asyncWrapper(async (req, res, next) => {
  */
 exports.refreshToken = asyncWrapper(
   async (req, res, next) => {
-    const { refreshToken } = req.body;
+    const refreshToken = req.refreshToken;
     jwt.verify(
       refreshToken,
       process.env.JWT_SECRET_REFRESH,

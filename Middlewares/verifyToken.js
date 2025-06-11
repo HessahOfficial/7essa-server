@@ -23,6 +23,7 @@ const verifyToken = (req, res, next) => {
 
 
 const verifyRefToken = (req, res, next) => {
+
     const authHeader = req.headers['Authorization'] || req.headers['authorization'];
     if (!authHeader) {
         const error = appError.create('Token is required', 401, httpStatusText.ERROR)
