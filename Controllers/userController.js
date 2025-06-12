@@ -218,6 +218,7 @@ exports.updateUser = async (req, res) => {
       updateData,
       { new: true },
     );
+    await updatedUser.save();
 
     if (!updatedUser) {
       return res
