@@ -2,71 +2,97 @@ const Investment = require('../Models/investmentModel');
 const asyncWrapper = require('../Middlewares/asyncWrapper');
 const Property = require('../Models/propertyModel');
 const mongoose = require('mongoose');
-const common = require('../utils/commonMethods');
 const appError = require('../utils/appError');
 const httpStatusText = require('../utils/constants/httpStatusText');
+const User = require('../Models/userModel');
 
 exports.makeInvestment = asyncWrapper(async (req, res, next) => {
   const userId = req.currentUser.id;
   const propertyId = req.params.id;
   const property = await Property.findById(propertyId);
+  const user = await User.findById(userId);
 
   if (!property) {
-    const error = appError.create('Property not found', 404, httpStatusText.FAIL);
-    return next(error);
+    return next(appError.create('Property not found', 404, httpStatusText.FAIL));
   }
-const numOfShares = req.body.numberOfShares;
- if (numOfShares > property.availableShares) {
-      const error = appError.create('Number of shares exceeds available shares', 400, httpStatusText.FAIL);
-      return next(error);
-    }
+
+  const numOfShares = req.body.numberOfShares;
+  const sharePrice = property.pricePerShare[property.pricePerShare.length - 1];
+
+  if (numOfShares > property.availableShares) {
+    return next(appError.create('Number of shares exceeds available shares', 400, httpStatusText.FAIL));
+  }
+
+  const investmentAmount = sharePrice * numOfShares;
+  if (user.balance < investmentAmount) {
+    return next(appError.create('Insufficient balance to make this investment', 400, httpStatusText.FAIL));
+  }
+
+  let existingInvestment = await Investment.findOne({ userId, propertyId });
+
+  const updatedAvailableShares = property.availableShares - numOfShares;
+  await Property.findByIdAndUpdate(propertyId, { availableShares: updatedAvailableShares });
+
   if (property.isRented) {
-    const sharePrice = property.pricePerShare[property.pricePerShare.length - 1];
     const monthlyReturns = (property.rentalIncome / property.totalShares) * numOfShares * 0.6;
     const annualReturns = monthlyReturns * 12;
     const totalReturns = 0;
-    const netGains = totalReturns - sharePrice;
-    const totalSharesPercentage = (numOfShares / property.totalShares) * 100;
-    const investmentAmount = sharePrice * numOfShares;
-    
+    const netGains = totalReturns - investmentAmount;
+    const totalSharesPercentage = ((existingInvestment?.numOfShares || 0) + numOfShares) / property.totalShares * 100;
 
-    const investment = await Investment.create({
-      userId: userId,
-      propertyId: req.params.id,
-      numOfShares: numOfShares,
-      SharePrice: sharePrice,
-      monthlyReturns: monthlyReturns,
-      annualReturns: annualReturns,
-      netGains: netGains,
-      totalSharesPercentage: totalSharesPercentage,
-      investmentAmount: investmentAmount,
-    });
-     const updatedAvailableShares = property.availableShares - numOfShares;
-    await Property.findByIdAndUpdate(propertyId, { availableShares: updatedAvailableShares }, { new: true });
-    return res.status(201).json({ investment: investment });
-     
+    if (existingInvestment) {
+      existingInvestment.numOfShares += numOfShares;
+      existingInvestment.investmentAmount += investmentAmount;
+      existingInvestment.monthlyReturns += monthlyReturns;
+      existingInvestment.annualReturns += annualReturns;
+      existingInvestment.totalSharesPercentage = totalSharesPercentage;
+      existingInvestment.netGains += netGains;
+      await existingInvestment.save();
+      return res.status(200).json({ investment: existingInvestment });
+    } else {
+      // Create a new investment
+      const investment = await Investment.create({
+        userId,
+        propertyId,
+        numOfShares,
+        SharePrice: sharePrice,
+        monthlyReturns,
+        annualReturns,
+        netGains,
+        totalSharesPercentage,
+        investmentAmount,
+      });
+      return res.status(201).json({ investment });
+    }
+
   } else {
-    const numOfShares = req.body.numberOfShares;
-    const sharePrice = property.pricePerShare[property.pricePerShare.length - 1];
-    const netGains = property.priceSold - sharePrice * numOfShares;
-    const investmentAmount = sharePrice * numOfShares;
-    const totalSharesPercentage = (numOfShares / property.totalShares) * 100;
-    const investment = await Investment.create({
-      userId: userId,
-      propertyId: req.params.id,
-      numOfShares: numOfShares,
-      SharePrice: sharePrice,
-      netGains: netGains,
-      totalSharesPercentage: totalSharesPercentage,
-      investmentAmount: investmentAmount,
-    });
-    const updatedAvailableShares = property.availableShares - numOfShares;
-   await Property.findByIdAndUpdate(propertyId, { availableShares: updatedAvailableShares }, { new: true });
-    return res.status(201).json({ investment: investment });
-      
-  }
+    const netGains = property.priceSold - investmentAmount;
+    const totalSharesPercentage = ((existingInvestment?.numOfShares || 0) + numOfShares) / property.totalShares * 100;
 
+    if (existingInvestment) {
+      existingInvestment.numOfShares += numOfShares;
+      existingInvestment.investmentAmount += investmentAmount;
+      existingInvestment.netGains += netGains;
+      existingInvestment.totalSharesPercentage = totalSharesPercentage;
+      await existingInvestment.save();
+      return res.status(200).json({ investment: existingInvestment });
+    } else {
+      const investment = await Investment.create({
+        userId,
+        propertyId,
+        numOfShares,
+        SharePrice: sharePrice,
+        netGains,
+        totalSharesPercentage,
+        investmentAmount,
+      });
+      return res.status(201).json({ investment });
+    }
+  }
 });
+
+
+
 
 exports.getInvestmentById = asyncWrapper(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -82,25 +108,7 @@ exports.getInvestmentById = asyncWrapper(async (req, res, next) => {
     const error = appError.create('Unauthorized to view this investment', 403, httpStatusText.FAIL);
     return next(error);
   }
-
   const property = await Property.findById(investment.propertyId);
-  if (!property) {
-    const error = appError.create('Property not found', 404, httpStatusText.FAIL);
-    return next(error);
-  }
-  if (!property.isRented) {
-    let updatedTotalReturns = (property.priceSold / property.totalShares) * investment.numOfShares;
-    investment.totalReturns = updatedTotalReturns;
-    const updatedNetGains = property.priceSold - investment.SharePrice * investment.numOfShares;
-    investment.netGains = updatedNetGains;
-    await investment.save();
-  } else {
-    const updatedTotalReturns = await common.calculateTotalReturns(investment._id);
-    const updatedNetGains = updatedTotalReturns - investment.SharePrice;
-    investment.totalReturns = updatedTotalReturns;
-    investment.netGains = updatedNetGains;
-    await investment.save();
-  }
 
   const sharePriceVariationPercentage = ((property.pricePerShare[property.pricePerShare.length - 1] - investment.SharePrice) / 100);
 
@@ -155,22 +163,12 @@ exports.getMyreturnsOnInvestment = asyncWrapper(async (req, res, next) => {
     return next(error);
   }
   if (!property.isRented) {
-    let updatedTotalReturns = (property.priceSold / property.totalShares) * investment.numOfShares;
-    investment.totalReturns = updatedTotalReturns;
-    const updatedNetGains = property.priceSold - investment.SharePrice * investment.numOfShares;
-    investment.netGains = updatedNetGains;
-    await investment.save();
     return res.status(200).json({
       totalReturns: investment.totalReturns,
       netGains: investment.netGains,
       totalSharesPercentage: investment.totalSharesPercentage,
     });
   } else {
-    const updatedTotalReturns = await common.calculateTotalReturns(investment._id);
-    const updatedNetGains = updatedTotalReturns - investment.SharePrice;
-    investment.totalReturns = updatedTotalReturns;
-    investment.netGains = updatedNetGains;
-    await investment.save();
     return res.status(200).json({
       totalReturns: investment.totalReturns,
       netGains: investment.netGains,

@@ -3,7 +3,6 @@ const Payment = require('../Models/paymentModel');
 const asyncWrapper = require('../Middlewares/asyncWrapper');
 const User = require('../Models/userModel');
 const appError = require('../utils/appError');
-const Returns = require("../Models/returnsModel");
 const Investment = require("../Models/investmentModel");
 const mongoose = require("mongoose");
 const httpStatusText = require('../utils/constants/httpStatusText');
@@ -137,23 +136,35 @@ exports.createProperty = asyncWrapper(async (req, res, next) => {
 
 exports.updateProperty = asyncWrapper(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    const error = appError.create('Invalid property ID', 400, httpStatusText.FAIL);
-    return next(error);
+    return next(appError.create('Invalid property ID', 400, httpStatusText.FAIL));
   }
-  const property = await Property.findByIdAndUpdate(
-    req.params.id,
-    req.body,
-    { new: true, runValidators: true },
-  );
+
+  const property = await Property.findById(req.params.id);
   if (!property) {
-    const error = appError.create('Property not found', 404, httpStatusText.FAIL);
-    return next(error);
+    return next(appError.create('Property not found', 404, httpStatusText.FAIL));
   }
-  res.status(200).json({
+
+  if (typeof req.body.price === 'number') {
+    property.price.push(req.body.price);
+    delete req.body.price; 
+  }
+
+  if (typeof req.body.pricePerShare === 'number') {
+    property.pricePerShare.push(req.body.pricePerShare);
+    delete req.body.pricePerShare;
+  }
+  Object.keys(req.body).forEach(key => {
+    property[key] = req.body[key];
+  });
+
+  await property.save();
+
+  return res.status(200).json({
     status: 'success',
     data: property
   });
 });
+
 
 exports.deleteProperty = asyncWrapper(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -358,6 +369,41 @@ exports.unbanUser = asyncWrapper(async (req, res, next) => {
 });
 
 // for investments 
+
+exports.refreshInvestmentPayments = asyncWrapper(async (req, res, next) => {
+  const investments = await Investment.find({});
+  if (!investments || investments.length === 0) {
+    const error = appError.create('No investments found', 404, httpStatusText.FAIL);
+    return next(error);
+  }
+
+  for (const investment of investments) {
+    const property = await Property.findById(investment.propertyId);
+    if (!property) continue;
+
+    const user = await User.findById(investment.userId);
+    if (!user) continue;
+
+    const now = new Date();
+    const lastPaymentDate = new Date(investment.lastPaymentDate);
+    const nextPaymentDueDate = new Date(lastPaymentDate);
+    nextPaymentDueDate.setMonth(nextPaymentDueDate.getMonth() + 1);
+    if (now >= nextPaymentDueDate) {
+      user.balance += investment.monthlyReturns;
+      investment.lastPaymentDate = now;
+      investment.totalReturns += investment.monthlyReturns;
+      investment.netGains = investment.totalReturns - investment.investmentAmount;
+      await user.save();
+      await investment.save();
+    }
+  }
+
+  res.status(200).json({
+    status: httpStatusText.SUCCESS,
+    message: 'Investment payments refreshed successfully',
+  });
+});
+
 exports.getAllInvestments = asyncWrapper(async (req, res, next) => {
   const investments = await Investment.find({});
   if (!investments) {

@@ -1,6 +1,5 @@
 const express = require('express');
 const adminController = require('../Controllers/adminController');
-const returnsController = require('../Controllers/returnsController');
 const allowedTo = require('../Middlewares/allowedTo');
 const userRoles = require('../utils/constants/userRoles');
 const router = express.Router();
@@ -60,12 +59,11 @@ router
   .route('/users/getUserByEmail')
   .get(verifyToken, adminController.getUserByEmail);
 
-//add payment to the returns
-router
-  .route('/payments/:id/returns')
-  .post(returnsController.addReturnPayment);
 
 //investments
+router
+  .route('/refreshInvestmentPayments')
+  .post(adminController.refreshInvestmentPayments)
 router
   .route('/getAllInvestments')
   .get(adminController.getAllInvestments);
