@@ -36,7 +36,7 @@ const userSchema = new mongoose.Schema(
       enum: Object.values(USER_ACTIVITY),
       default: USER_ACTIVITY.ACTIVE,
     },
-    phoneNumber: { type: Number },
+    phoneNumber: { type: String },
     email_verification_code: { type: Number },
     email_verification_code_expires: { type: Date },
 

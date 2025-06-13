@@ -182,10 +182,10 @@ const escapeHtml = (str) =>
 
 exports.updateUser = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { userId } = req.params;
     const updateData = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res
         .status(400)
         .json({ error: 'Invalid user ID format' });
@@ -214,7 +214,7 @@ exports.updateUser = async (req, res) => {
     }
 
     const updatedUser = await User.findByIdAndUpdate(
-      id,
+      userId,
       updateData,
       { new: true },
     );
@@ -228,7 +228,14 @@ exports.updateUser = async (req, res) => {
 
     res.status(200).json({
       message: 'User updated successfully',
-      user: updatedUser, // FIXME: Send Public UserData
+      user: {
+        username: updatedUser.username,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        fullName: updatedUser.fullName,
+        phoneNumber: updatedUser.phoneNumber,
+        avatar: updatedUser.avatar,
+      },
     });
   } catch (error) {
     res
@@ -319,57 +326,6 @@ exports.sendPushNotificationToAll = async (req, res) => {
   }
 };
 
-exports.getUserInformation = asyncWrapper(
-  async (req, res, next) => {
-    const { userId } = req.params;
-
-    if (!userId) {
-      const error = appError.create(
-        'User id is required as a parameter!',
-        400,
-        httpStatusText.ERROR,
-      );
-      return next(error);
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      const error = appError.create(
-        'Invalid user Id  format!',
-        400,
-        httpStatusText.ERROR,
-      );
-      return next(error);
-    }
-
-    const oldUser = await User.findById(userId);
-    if (!oldUser) {
-      const error = appError.create(
-        'User not found!',
-        404,
-        httpStatusText.ERROR,
-      );
-      return next(error);
-    }
-
-    const user = {
-      username: oldUser.username,
-      firstname: oldUser.firstName,
-      lastname: oldUser.lastName,
-      fullname: oldUser.fullName,
-      phoneNumber: oldUser.phoneNumber,
-      email: oldUser.email,
-      avatar: oldUser.avatar,
-    };
-
-    res.status(200).json({
-      status: httpStatusText.SUCCESS,
-      message: 'User info is retrieved successfully!',
-      data: {
-        user,
-      },
-    });
-  },
-);
 
 exports.showBalance = asyncWrapper(
   async (req, res, next) => {

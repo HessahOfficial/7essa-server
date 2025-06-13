@@ -29,8 +29,6 @@ router.route("/:userId/favourites")
   .get(allowedToSameUserAnd(), getUserFavourites)
   .delete(allowedToSameUserAnd(), deleteUserFavourites);
 
-router.route("/:userId")
-  .get(allowedToSameUserAnd(), getUserInformation);
 
 router.route("/balance/:userId")
   .post(allowedToSameUserAnd(), showBalance);
@@ -47,7 +45,7 @@ router.post(
   upload.single('avatar'),
   addAvatar,
 );
-router.patch('/updateUser/:id', verifyToken, updateUser);
+router.patch('/:userId', verifyToken, updateUser);
 
 router.delete('/:id', verifyToken, deleteUser);
 router.post(
