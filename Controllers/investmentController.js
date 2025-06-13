@@ -24,6 +24,7 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
   }
 
   const investmentAmount = sharePrice * numOfShares;
+
   if (user.balance < investmentAmount) {
     return next(appError.create('Insufficient balance to make this investment', 400, httpStatusText.FAIL));
   }
@@ -48,9 +49,13 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
       existingInvestment.totalSharesPercentage = totalSharesPercentage;
       existingInvestment.netGains += netGains;
       await existingInvestment.save();
+
+   
+      user.balance -= investmentAmount;
+      await user.save();
+
       return res.status(200).json({ investment: existingInvestment });
     } else {
-      // Create a new investment
       const investment = await Investment.create({
         userId,
         propertyId,
@@ -62,6 +67,10 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
         totalSharesPercentage,
         investmentAmount,
       });
+
+      user.balance -= investmentAmount;
+      await user.save();
+
       return res.status(201).json({ investment });
     }
 
@@ -75,6 +84,10 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
       existingInvestment.netGains += netGains;
       existingInvestment.totalSharesPercentage = totalSharesPercentage;
       await existingInvestment.save();
+
+      user.balance -= investmentAmount;
+      await user.save();
+
       return res.status(200).json({ investment: existingInvestment });
     } else {
       const investment = await Investment.create({
@@ -86,10 +99,17 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
         totalSharesPercentage,
         investmentAmount,
       });
+
+      
+      user.balance -= investmentAmount;
+      await user.save();
+
       return res.status(201).json({ investment });
     }
   }
 });
+
+
 
 
 
