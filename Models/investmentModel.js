@@ -41,7 +41,7 @@ const investmentSchema = new mongoose.Schema({
   netGains: {
     type: Number,
   },
-  SharePrice: {
+  sharePrice: {
     type: Number,
     required: [true, 'price per share is required'],
   },

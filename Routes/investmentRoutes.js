@@ -12,12 +12,14 @@ router
 router
   .route('/:id')
   .get(verifyToken, investmentController.getInvestmentById);
+
 router
   .route('/:id/property')
   .get(
     verifyToken,
     investmentController.getInvestmentProperty,
   );
+
 router
   .route('/')
   .get(

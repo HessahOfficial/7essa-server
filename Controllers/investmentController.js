@@ -34,7 +34,7 @@ const numOfShares = req.body.numberOfShares;
       userId: userId,
       propertyId: req.params.id,
       numOfShares: numOfShares,
-      SharePrice: sharePrice,
+      sharePrice: sharePrice,
       monthlyReturns: monthlyReturns,
       annualReturns: annualReturns,
       netGains: netGains,
@@ -55,7 +55,7 @@ const numOfShares = req.body.numberOfShares;
       userId: userId,
       propertyId: req.params.id,
       numOfShares: numOfShares,
-      SharePrice: sharePrice,
+      sharePrice: sharePrice,
       netGains: netGains,
       totalSharesPercentage: totalSharesPercentage,
       investmentAmount: investmentAmount,
@@ -91,18 +91,18 @@ exports.getInvestmentById = asyncWrapper(async (req, res, next) => {
   if (!property.isRented) {
     let updatedTotalReturns = (property.priceSold / property.totalShares) * investment.numOfShares;
     investment.totalReturns = updatedTotalReturns;
-    const updatedNetGains = property.priceSold - investment.SharePrice * investment.numOfShares;
+    const updatedNetGains = property.priceSold - investment.sharePrice * investment.numOfShares;
     investment.netGains = updatedNetGains;
     await investment.save();
   } else {
     const updatedTotalReturns = await common.calculateTotalReturns(investment._id);
-    const updatedNetGains = updatedTotalReturns - investment.SharePrice;
+    const updatedNetGains = updatedTotalReturns - investment.sharePrice;
     investment.totalReturns = updatedTotalReturns;
     investment.netGains = updatedNetGains;
     await investment.save();
   }
 
-  const sharePriceVariationPercentage = ((property.pricePerShare[property.pricePerShare.length - 1] - investment.SharePrice) / 100);
+  const sharePriceVariationPercentage = ((property.pricePerShare[property.pricePerShare.length - 1] - investment.sharePrice) / 100);
 
   return res.status(200).json({
     investment: {
@@ -157,7 +157,7 @@ exports.getMyreturnsOnInvestment = asyncWrapper(async (req, res, next) => {
   if (!property.isRented) {
     let updatedTotalReturns = (property.priceSold / property.totalShares) * investment.numOfShares;
     investment.totalReturns = updatedTotalReturns;
-    const updatedNetGains = property.priceSold - investment.SharePrice * investment.numOfShares;
+    const updatedNetGains = property.priceSold - investment.sharePrice * investment.numOfShares;
     investment.netGains = updatedNetGains;
     await investment.save();
     return res.status(200).json({
@@ -167,7 +167,7 @@ exports.getMyreturnsOnInvestment = asyncWrapper(async (req, res, next) => {
     });
   } else {
     const updatedTotalReturns = await common.calculateTotalReturns(investment._id);
-    const updatedNetGains = updatedTotalReturns - investment.SharePrice;
+    const updatedNetGains = updatedTotalReturns - investment.sharePrice;
     investment.totalReturns = updatedTotalReturns;
     investment.netGains = updatedNetGains;
     await investment.save();
