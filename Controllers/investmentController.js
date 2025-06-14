@@ -60,7 +60,7 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
         userId,
         propertyId,
         numOfShares,
-        SharePrice: sharePrice,
+        sharePrice: sharePrice,
         monthlyReturns,
         annualReturns,
         netGains,
@@ -94,7 +94,7 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
         userId,
         propertyId,
         numOfShares,
-        SharePrice: sharePrice,
+        sharePrice: sharePrice,
         netGains,
         totalSharesPercentage,
         investmentAmount,
@@ -130,7 +130,7 @@ exports.getInvestmentById = asyncWrapper(async (req, res, next) => {
   }
   const property = await Property.findById(investment.propertyId);
 
-  const sharePriceVariationPercentage = ((property.pricePerShare[property.pricePerShare.length - 1] - investment.SharePrice) / 100);
+  const sharePriceVariationPercentage = ((property.pricePerShare[property.pricePerShare.length - 1] - investment.sharePrice) / 100);
 
   return res.status(200).json({
     investment: {
