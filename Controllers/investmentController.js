@@ -7,6 +7,7 @@ const httpStatusText = require('../utils/constants/httpStatusText');
 const User = require('../Models/userModel');
 const userRoles = require('../utils/constants/userRoles');
 
+
 exports.makeInvestment = asyncWrapper(async (req, res, next) => {
   const userId = req.currentUser.id;
   const propertyId = req.params.id;
