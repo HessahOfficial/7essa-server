@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
 const appError = require('../utils/appError');
 const httpStatusText = require('../utils/constants/httpStatusText');
 const User = require('../Models/userModel');
+const userRoles = require('../utils/constants/userRoles');
+
 
 exports.makeInvestment = asyncWrapper(async (req, res, next) => {
   const userId = req.currentUser.id;
@@ -60,7 +62,7 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
         userId,
         propertyId,
         numOfShares,
-        SharePrice: sharePrice,
+        sharePrice: sharePrice,
         monthlyReturns,
         annualReturns,
         netGains,
@@ -94,7 +96,7 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
         userId,
         propertyId,
         numOfShares,
-        SharePrice: sharePrice,
+        sharePrice: sharePrice,
         netGains,
         totalSharesPercentage,
         investmentAmount,
@@ -124,13 +126,13 @@ exports.getInvestmentById = asyncWrapper(async (req, res, next) => {
     const error = appError.create('Investment not found', 404, httpStatusText.FAIL);
     return next(error);
   }
-  if (req.currentUser.id !== investment.userId.toString()) {
+  if (req.currentUser.id !== investment.userId.toString() && req.currentUser.role !== userRoles.ADMIN ) {
     const error = appError.create('Unauthorized to view this investment', 403, httpStatusText.FAIL);
     return next(error);
   }
   const property = await Property.findById(investment.propertyId);
 
-  const sharePriceVariationPercentage = ((property.pricePerShare[property.pricePerShare.length - 1] - investment.SharePrice) / 100);
+  const sharePriceVariationPercentage = ((property.pricePerShare[property.pricePerShare.length - 1] - investment.sharePrice) / 100);
 
   return res.status(200).json({
     investment: {
@@ -138,6 +140,26 @@ exports.getInvestmentById = asyncWrapper(async (req, res, next) => {
       sharePriceVariationPercentage,
     },
   });
+});
+
+exports.deleteInvestmentById = asyncWrapper(async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    const error = appError.create('Invalid property ID', 400, httpStatusText.FAIL);
+    return next(error);
+  }
+  const investment = await Investment.findById(req.params.id);
+  if (!investment) {
+    const error = appError.create('Investment not found', 404, httpStatusText.FAIL);
+    return next(error);
+  }
+  if (req.currentUser.id !== investment.userId.toString() && req.currentUser.role !== userRoles.ADMIN ) {
+    const error = appError.create('Unauthorized to delete this investment', 403, httpStatusText.FAIL);
+    return next(error);
+  }
+
+  await Investment.findByIdAndDelete(req.params.id);
+  return res.status(200).json({ status: 'success', message: ' Request Deleted Sucessfully', data: investment });
+
 });
 
 exports.getInvestmentProperty = asyncWrapper(async (req, res, next) => {
@@ -158,13 +180,115 @@ exports.getInvestmentProperty = asyncWrapper(async (req, res, next) => {
   return res.status(200).json({ property: property });
 });
 
-exports.getAllMyInvestments = asyncWrapper(async (req, res, next) => {
-  const investments = await Investment.find({ userId: req.currentUser.id });
-  if (!investments) {
-    const error = appError.create('No investments found', 404, httpStatusText.FAIL);
-    return next(error);
+exports.getAllInvestments = asyncWrapper(async (req, res, next) => {
+  const query = req.query;
+  const limit = parseInt(query.limit) || 12;
+  const page = parseInt(query.page) || 1;
+  const skip = (page - 1) * limit;
+
+  const userId = query.ownerId || '';
+  const propertyName = query.propertyName || '';
+  const sort = query.sort || '-createdAt';
+
+  const numOfShares = query.numOfShares || '';
+  const maxNumOfShares = query.maxNumOfShares || '';
+  const minNumOfShares = query.minNumOfShares || '';
+  const investmentStatus = query.investmentStatus || '';
+  const investmentDate = query.investmentDate || '';
+  const minInvestmentDate = query.minInvestmentDate || '';
+  const maxInvestmentDate = query.maxInvestmentDate || '';
+
+  const matchStage = {};
+
+  // role check
+  if (req.currentUser.role !== userRoles.ADMIN) {
+    matchStage.userId = new mongoose.Types.ObjectId(req.currentUser.id);
+  } else if (userId) {
+    matchStage.userId = new mongoose.Types.ObjectId(userId);
   }
-  return res.status(200).json({ investments: investments });
+
+  if (numOfShares) matchStage.numOfShares = parseInt(numOfShares);
+  if (minNumOfShares) matchStage.numOfShares = { ...matchStage.numOfShares, $gte: parseInt(minNumOfShares) };
+  if (maxNumOfShares) matchStage.numOfShares = { ...matchStage.numOfShares, $lte: parseInt(maxNumOfShares) };
+
+  if (investmentStatus) matchStage.investmentStatus = investmentStatus;
+  if (investmentDate) matchStage.investmentDate = new Date(investmentDate);
+  if (minInvestmentDate) matchStage.estimatedExitDate = { $gte: new Date(minInvestmentDate) };
+  if (maxInvestmentDate) matchStage.estimatedExitDate = { ...matchStage.estimatedExitDate, $lte: new Date(maxInvestmentDate) };
+
+  // Aggregation pipeline
+  const aggregation = [
+    {
+      $lookup: {
+        from: 'properties',
+        localField: 'propertyId',
+        foreignField: '_id',
+        as: 'property'
+      }
+    },
+    { $unwind: '$property' },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'user'
+      }
+    },
+    { $unwind: '$user' },
+    {
+      $match: {
+        ...matchStage,
+        ...(propertyName ? { 'property.title': { $regex: propertyName, $options: 'i' } } : {})
+      }
+    },
+    {
+      $sort: {
+        [sort.replace('-', '')]: sort.startsWith('-') ? -1 : 1
+      }
+    },
+    { $skip: skip },
+    { $limit: limit },
+    {
+      $project: {
+        _id: 1,
+        investmentStatus: 1,
+        investmentDate: 1,
+        numOfShares: 1,
+        sharePrice: 1,
+        displayingSharePrice: 1,
+        investmentAmount: 1,
+        userId: {
+          avatar: '$user.avatar',
+          firstName: '$user.firstName',
+          lastName: '$user.lastName'
+        },
+        propertyId: {
+          title: '$property.title'
+        }
+      }
+    }
+  ];
+  
+  const investments = await Investment.aggregate(aggregation);
+
+  const countAggregation = await Investment.aggregate([
+    ...aggregation.slice(0, 6), // Up to and including $match
+    { $count: 'total' }
+  ]);
+
+  const totalInvestments = countAggregation[0]?.total || 0;
+  const totalPages = Math.ceil(totalInvestments / limit);
+
+  res.status(200).json({
+    status: 'success',
+    investments: investments.length,
+    data: {
+      investments,
+      totalInvestments,
+      totalPages,
+    },
+  });
 });
 
 exports.getMyreturnsOnInvestment = asyncWrapper(async (req, res, next) => {
@@ -173,7 +297,7 @@ exports.getMyreturnsOnInvestment = asyncWrapper(async (req, res, next) => {
     const error = appError.create('Investment not found', 404, httpStatusText.FAIL);
     return next(error);
   }
-  if (req.currentUser.id !== investment.userId.toString()) {
+  if (req.currentUser.id !== investment.userId.toString() && req.currentUser.role !== userRoles.ADMIN) {
     const error = appError.create('Unauthorized to view this investment', 403, httpStatusText.FAIL);
     return next(error);
   }

@@ -3,6 +3,8 @@ const investmentController = require('../Controllers/investmentController');
 const {
   verifyToken,
 } = require('../Middlewares/verifyToken');
+const allowedTo = require('../Middlewares/allowedTo');
+const userRoles = require('../utils/constants/userRoles');
 
 const router = express.Router();
 
@@ -11,19 +13,20 @@ router
   .post(verifyToken, investmentController.makeInvestment);
 router
   .route('/:id')
-  .get(verifyToken, investmentController.getInvestmentById);
+  .get(verifyToken, investmentController.getInvestmentById)
+  .delete(verifyToken, allowedTo(userRoles.ADMIN), investmentController.deleteInvestmentById);
+
 router
   .route('/:id/property')
   .get(
     verifyToken,
     investmentController.getInvestmentProperty,
   );
+
 router
   .route('/')
-  .get(
-    verifyToken,
-    investmentController.getAllMyInvestments,
-  );
+  .get(verifyToken, investmentController.getAllInvestments);
+
 router
   .route('/:id/returns')
   .get(
