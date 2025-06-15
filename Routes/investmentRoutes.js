@@ -24,7 +24,7 @@ router
   .route('/')
   .get(
     verifyToken,
-    investmentController.getAllMyInvestments,
+    investmentController.getAllInvestments,
   );
 router
   .route('/:id/returns')
