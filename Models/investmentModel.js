@@ -70,7 +70,7 @@ let EGPFormat = new Intl.NumberFormat("en-US", {
   maximumSignificantDigits: 3, // Maximum significant digits
 });
 
-investmentSchema.pre("save", function (next) {
+investmentSchema.pre('save', function (next) {
   if (this.sharePrice) {
     const price = this.sharePrice;
     this.displayingSharePrice = {
@@ -78,6 +78,7 @@ investmentSchema.pre("save", function (next) {
       en: `${EGPFormat.format(price)} L.E`,
     };
   }
+  next();
 });
 
 const Investment = mongoose.model(
