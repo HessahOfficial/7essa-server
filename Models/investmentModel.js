@@ -74,8 +74,8 @@ investmentSchema.pre("save", function (next) {
   if (this.sharePrice) {
     const price = this.sharePrice;
     this.displayingSharePrice = {
-      ar: `ج.م ${EGPFormat.format(fulPrice)}`,
-      en: `${EGPFormat.format(fulPrice)} L.E`,
+      ar: `ج.م ${EGPFormat.format(price)}`,
+      en: `${EGPFormat.format(price)} L.E`,
     };
   }
 });
