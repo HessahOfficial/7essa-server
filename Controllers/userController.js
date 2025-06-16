@@ -193,7 +193,7 @@ exports.updateUserById = asyncWrapper(async (req, res, next) => {
     return next(error);
   }
 
-  if (userId !== req.currentUser.userId && req.currentUser.role !== userRoles.ADMIN) {
+  if (userId !== req.currentUser.id && req.currentUser.role !== userRoles.ADMIN) {
     const error = appError.create(
       "You are not allowed to update this user",
       403,

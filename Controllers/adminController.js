@@ -66,7 +66,7 @@ exports.createProperty = asyncWrapper(async (req, res, next) => {
     status,
     investmentDocs
   } = req.body;
-  const ownerId = req.currentUser._id;
+  const ownerId = req.currentUser.id;
   if (!ownerId) {
     const error = appError.create('User not authenticated', 401, httpStatusText.FAIL);
     return next(error);
