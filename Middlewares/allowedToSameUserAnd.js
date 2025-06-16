@@ -13,14 +13,10 @@ module.exports = (...roles) => {
       httpStatusText.ERROR
     );
 
-    if (roles.length !== 0 && !roles.includes(role)) {
-      return next(error);
+    if ((roles.length !== 0 && roles.includes(role)) || userId === id) {
+      return next();
     }
+    return next(error);
 
-    if (userId !== id && roles.length !== 0 && !roles.includes(role)) {
-      return next(error);
-    }
-
-    next();
   };
 }
