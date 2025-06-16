@@ -6,6 +6,7 @@ const asyncWrapper = require('../Middlewares/asyncWrapper');
 const appError = require('../utils/appError');
 const httpStatusText = require('../utils/constants/httpStatusText');
 const verifyNationalId = require('../utils/verifyNationalId');
+const userRoles = require('../utils/constants/userRoles');
 
 exports.getUserFavourites = async (req, res) => {
   try {
@@ -180,69 +181,121 @@ const escapeHtml = (str) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 
-exports.updateUser = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const updateData = req.body;
+exports.updateUserById = asyncWrapper(async (req, res, next) => {
+  const userId = req.params.userId;
+  let { firstName, lastName, email, username, password, phoneNumber } = req.body;
+  if (email) email = email.toLowerCase();
+  if (username) username = username.toLowerCase();
 
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res
-        .status(400)
-        .json({ error: 'Invalid user ID format' });
-    }
-
-    const restrictedFields = [
-      'password',
-      '_id',
-      'createdAt',
-      'role',
-      'balance',
-      'emailVerified',
-      'email'
-    ];
-    restrictedFields.forEach(
-      (field) => delete updateData[field],
-    );
-
-    if (
-      updateData.email &&
-      !validator.isEmail(updateData.email)
-    ) {
-      return res
-        .status(400)
-        .json({ error: 'Invalid email format' });
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      updateData,
-      { new: true },
-    );
-    await updatedUser.save();
-
-    if (!updatedUser) {
-      return res
-        .status(404)
-        .json({ error: 'User not found' });
-    }
-
-    res.status(200).json({
-      message: 'User updated successfully',
-      user: {
-        username: updatedUser.username,
-        firstName: updatedUser.firstName,
-        lastName: updatedUser.lastName,
-        fullName: updatedUser.fullName,
-        phoneNumber: updatedUser.phoneNumber,
-        avatar: updatedUser.avatar,
-      },
-    });
-  } catch (error) {
-    res
-      .status(500)
-      .send('Server error: ' + escapeHtml(error.message));
+  const user = await User.findById(userId);
+  if (!user) {
+    const error = appError.create("User not found", 404, httpStatusText.FAIL);
+    return next(error);
   }
-};
+
+  if (userId !== req.currentUser.userId && req.currentUser.role !== userRoles.ADMIN) {
+    const error = appError.create(
+      "You are not allowed to update this user",
+      403,
+      httpStatusText.FAIL
+    );
+    return next(error);
+  }
+
+  if (firstName) {
+    user.firstName = firstName;
+  }
+  if (lastName) {
+    user.lastName = lastName;
+  }
+
+  if (email) {
+    if (!validator.isEmail(email)) {
+      const error = appError.create(
+        "Email is not valid",
+        400,
+        httpStatusText.FAIL
+      );
+      return next(error);
+    }
+    user.email = email;
+  }
+  if (username) {
+    if (!validator.isAlphanumeric(username)) {
+      const error = appError.create(
+        "Username is not valid",
+        400,
+        httpStatusText.FAIL
+      );
+      return next(error);
+    }
+    user.username = username;
+  }
+  if (password) {
+    if (password.length < 8) {
+      const error = appError.create(
+        "Password must be at least 8 characters or long",
+        400,
+        httpStatusText.FAIL
+      );
+      return next(error);
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    user.password = hashedPassword;
+  }
+  if (phoneNumber && !validator.isMobilePhone(phoneNumber)) {
+    const error = appError.create(
+      "Phone Number is not valid",
+      400,
+      httpStatusText.FAIL
+    );
+    return next(error);
+  }
+  if (phoneNumber) {
+    user.phoneNumber = phoneNumber;
+  }
+
+  await user.save();
+
+  res
+    .status(200)
+    .json({ status: httpStatusText.SUCCESS, data: { user: user } });
+});
+
+exports.updateUserRoleById = asyncWrapper(async (req, res, next) => {
+  const userId = req.params.userId;
+  let { role } = req.body;
+  if (role) {
+    role = role.trim().toUpperCase();
+  }
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    const error = appError.create("User not found", 404, httpStatusText.FAIL);
+    return next(error);
+  }
+
+  if (!role) {
+    const error = appError.create("Role is required", 400, httpStatusText.FAIL);
+    return next(error);
+  }
+
+  if (!userRoles[role]) {
+    const error = appError.create(
+      "Role is not valid",
+      400,
+      httpStatusText.FAIL
+    );
+    return next(error);
+  }
+
+  user.role = role;
+  await user.save();
+
+  res.status(200)
+    .json({ status: httpStatusText.SUCCESS, data: { user: user } });
+});
 
 exports.deleteUser = async (req, res) => {
   try {
@@ -326,6 +379,57 @@ exports.sendPushNotificationToAll = async (req, res) => {
   }
 };
 
+exports.getUserInformation = asyncWrapper(
+  async (req, res, next) => {
+    const { userId } = req.params;
+
+    if (!userId) {
+      const error = appError.create(
+        'User id is required as a parameter!',
+        400,
+        httpStatusText.ERROR,
+      );
+      return next(error);
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      const error = appError.create(
+        'Invalid user Id  format!',
+        400,
+        httpStatusText.ERROR,
+      );
+      return next(error);
+    }
+
+    const oldUser = await User.findById(userId);
+    if (!oldUser) {
+      const error = appError.create(
+        'User not found!',
+        404,
+        httpStatusText.ERROR,
+      );
+      return next(error);
+    }
+
+    const user = {
+      username: oldUser.username,
+      firstname: oldUser.firstName,
+      lastname: oldUser.lastName,
+      fullname: oldUser.fullName,
+      phoneNumber: oldUser.phoneNumber,
+      email: oldUser.email,
+      avatar: oldUser.avatar,
+    };
+
+    res.status(200).json({
+      status: httpStatusText.SUCCESS,
+      message: 'User info is retrieved successfully!',
+      data: {
+        user,
+      },
+    });
+  },
+);
 
 exports.showBalance = asyncWrapper(
   async (req, res, next) => {
