@@ -5,8 +5,11 @@ const User = require('../Models/userModel');
 const appError = require('../utils/appError');
 const Investment = require("../Models/investmentModel");
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const validator = require('validator');
 const httpStatusText = require('../utils/constants/httpStatusText');
 const USER_ACTIVITY = require('../utils/constants/USER_ACTIVITY');
+const userRoles = require('../utils/constants/userRoles');
 
 //For properties
 exports.getAllProperties = asyncWrapper(async(req,res,next)=>{
@@ -267,15 +270,172 @@ exports.declinePayment = asyncWrapper(async (req, res, next) => {
 
 //For Dashboard (Reports)
 exports.getAllUsers = asyncWrapper(async (req, res, next) => {
-  const users = await User.find({});
-  if (!users) {
-    const error = appError.create('No users found', 404, httpStatusText.FAIL);
-    return next(error);
-  }
+  const query = req.query;
+
+  // Pagination
+  const limit = parseInt(query.limit) || 12;
+  const page = parseInt(query.page) || 1;
+  const skip = (page - 1) * limit;
+
+  // Sorting
+  const sort = query.sort || '-createdAt';
+
+  // Filters
+  const filters = {};
+
+  if (query.userId) filters._id = query.userId;
+  if (query.firstName) filters.firstName = { $regex: query.firstName, $options: 'i' };
+  if (query.lastName) filters.lastName = { $regex: query.lastName, $options: 'i' };
+  if (query.fullName) filters.fullName = { $regex: query.fullName, $options: 'i' };
+  if (query.username) filters.username = { $regex: query.username, $options: 'i' };
+  if (query.email) filters.email = { $regex: query.email, $options: 'i' };
+  if (query.role) filters.role = query.role;
+  if (query.activity) filters.activity = query.activity;
+  if (query.emailVerified !== undefined) filters.emailVerified = query.emailVerified === 'true';
+  if (query.ID_Verified !== undefined) filters.ID_Verified = query.ID_Verified === 'true';
+  if (query.isInvestor !== undefined) filters.isInvestor = query.isInvestor === 'true';
+  if (query.isOwner !== undefined) filters.isOwner = query.isOwner === 'true';
+  if (query.balance !== undefined) filters.balance = query.balance;
+  if (query.minBalance) filters.balance = { $gte: query.minBalance };
+  if (query.maxBalance) filters.balance = { $lte: query.maxBalance };
+
+  const users = await User.find(filters)
+    .sort(sort)
+    .skip(skip)
+    .limit(limit);
+
+  const totalUsers = await User.countDocuments(filters);
+  const totalPages = Math.ceil(totalUsers / limit);
+
   res.status(200).json({
     status: 'success',
     results: users.length,
-    data: users
+    data: {
+      users,
+      totalUsers,
+      totalPages
+    }
+  });
+});
+
+exports.createUser = asyncWrapper(async (req, res, next) => {
+  let {
+    firstName,
+    lastName,
+    email,
+    username,
+    password,
+    phoneNumber,
+    role,
+    emailVerified,
+  } = req.body;
+  if (!firstName || !lastName || !email || !username || !password) {
+    const error = appError.create(
+      "First Name, Last Name, Email, Username and Password are required",
+      400,
+      httpStatusText.FAIL
+    );
+    return next(error);
+  }
+
+  email = email.toLowerCase();
+  username = username.toLowerCase();
+
+  let oldUser = await User.findOne({ email });
+  if (oldUser) {
+    const error = appError.create(
+      "User already exists please change your email",
+      400,
+      httpStatusText.FAIL
+    );
+    return next(error);
+  }
+
+  oldUser = await User.findOne({ username });
+  if (oldUser) {
+    const error = appError.create(
+      "User already exists please change your username",
+      400,
+      httpStatusText.FAIL
+    );
+    return next(error);
+  }
+
+  if (!validator.isEmail(email)) {
+    const error = appError.create(
+      "Email is not valid",
+      400,
+      httpStatusText.FAIL
+    );
+    return next(error);
+  }
+
+  if (!validator.isAlphanumeric(username)) {
+    const error = appError.create(
+      "Username is not valid",
+      400,
+      httpStatusText.FAIL
+    );
+    return next(error);
+  }
+
+  if (password.length < 8) {
+    const error = appError.create(
+      "Password must be at least 8 characters or long",
+      400,
+      httpStatusText.FAIL
+    );
+    return next(error);
+  }
+
+  if (phoneNumber && !validator.isMobilePhone(phoneNumber)) {
+    const error = appError.create(
+      "Phone Number is not valid",
+      400,
+      httpStatusText.FAIL
+    );
+    return next(error);
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const newUser = new User({
+    firstName,
+    lastName,
+    email,
+    username,
+    password: hashedPassword,
+  });
+
+  if (phoneNumber) {
+    newUser.phoneNumber = phoneNumber;
+  }
+
+  if (role && userRoles[role]) {
+    newUser.role = role;
+  }
+
+  newUser.lastLogin = new Date();
+
+  if (emailVerified) {
+    newUser.emailVerified = emailVerified;
+  } else {
+    newUser.emailVerified = false;
+  }
+
+  await newUser.save();
+  const UserData = {
+    id: newUser._id,
+    firstName: newUser.firstName,
+    lastName: newUser.lastName,
+    email: newUser.email,
+    username: newUser.username,
+    role: newUser.role,
+    avatar: newUser.avatar,
+  };
+
+  return res.json({
+    status: httpStatusText.SUCCESS,
+    data: { token: { refresh: null, access: null }, user: UserData },
   });
 });
 
@@ -291,7 +451,9 @@ exports.getUserById = asyncWrapper(async (req, res, next) => {
   }
   res.status(200).json({
     status: 'success',
-    data: user
+    data: {
+      user
+    }
   });
 });
 

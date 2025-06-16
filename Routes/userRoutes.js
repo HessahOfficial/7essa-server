@@ -3,7 +3,8 @@ const express = require('express');
 const router = express.Router();
 const { upload } = require('../Config/cloudinaryConfig');
 const {
-  updateUser,
+  updateUserById,
+  updateUserRoleById,
   deleteUser,
   getUserFavourites,
   addUserFavourites,
@@ -21,6 +22,8 @@ const {
 } = require('../Middlewares/verifyToken');
 
 const allowedToSameUserAnd = require("../Middlewares/allowedToSameUserAnd");
+const allowedTo = require('../Middlewares/allowedTo');
+const userRoles = require('../utils/constants/userRoles');
 
 router.route("/:userId/favourites/:propertyId")
   .post(allowedToSameUserAnd(), addUserFavourites);
@@ -45,7 +48,13 @@ router.post(
   upload.single('avatar'),
   addAvatar,
 );
-router.patch('/:userId', verifyToken, updateUser);
+router.route("/:userId")
+  .get(verifyToken, allowedToSameUserAnd(userRoles.ADMIN), getUserInformation)
+  .patch(verifyToken, allowedToSameUserAnd(userRoles.ADMIN), updateUserById);
+
+router.route('/role/:userId')
+  .patch(verifyToken, allowedTo(userRoles.ADMIN), updateUserRoleById)
+
 
 router.delete('/:id', verifyToken, deleteUser);
 router.post(

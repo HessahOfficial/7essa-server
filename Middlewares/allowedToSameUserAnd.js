@@ -17,7 +17,7 @@ module.exports = (...roles) => {
       return next(error);
     }
 
-    if (userId !== id) {
+    if (userId !== id && roles.length !== 0 && !roles.includes(role)) {
       return next(error);
     }
 

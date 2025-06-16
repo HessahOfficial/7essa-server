@@ -38,8 +38,10 @@ router
 
 //Dashboard(Reports)
 router
-  .route('/dashboard/Users')
-  .get(adminController.getAllUsers);
+  .route('/dashboard/users')
+  .get(adminController.getAllUsers)
+  .post(adminController.createUser);
+
 router
   .route('/dashboard/Users/:id')
   .get(adminController.getUserById);
