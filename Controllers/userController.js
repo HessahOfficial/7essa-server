@@ -183,7 +183,7 @@ const escapeHtml = (str) =>
 
 exports.updateUserById = asyncWrapper(async (req, res, next) => {
   const userId = req.params.userId;
-  let { firstName, lastName, email, username, password, phoneNumber, avatar } = req.body;
+  let { firstName, lastName, email, username, password, phoneNumber } = req.body;
   if (email) email = email.toLowerCase();
   if (username) username = username.toLowerCase();
 
@@ -207,10 +207,6 @@ exports.updateUserById = asyncWrapper(async (req, res, next) => {
   }
   if (lastName) {
     user.lastName = lastName;
-  }
-
-  if (avatar) {
-    user.avatar = avatar;
   }
 
   if (email) {
