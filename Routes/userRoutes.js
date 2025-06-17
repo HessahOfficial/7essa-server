@@ -16,6 +16,7 @@ const {
   showBalance,
   changePinCode,
   becomeInvestor,
+  getAllPartners,
 } = require('../Controllers/userController');
 const {
   verifyToken,
@@ -48,13 +49,16 @@ router.post(
   upload.single('avatar'),
   addAvatar,
 );
+
+router.route("/partners")
+  .get(getAllPartners);
+
 router.route("/:userId")
   .get(verifyToken, allowedToSameUserAnd(userRoles.ADMIN), getUserInformation)
   .patch(verifyToken, allowedToSameUserAnd(userRoles.ADMIN), updateUserById);
 
 router.route('/role/:userId')
   .patch(verifyToken, allowedTo(userRoles.ADMIN), updateUserRoleById)
-
 
 router.delete('/:id', verifyToken, deleteUser);
 router.post(
