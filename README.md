@@ -51,7 +51,7 @@ This is the backend repository for **7essa**, a sophisticated real estate invest
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/HessahOfficial/7essa-server.git
 cd 7essa-server
 ```
 
