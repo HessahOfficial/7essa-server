@@ -54,9 +54,6 @@ router.post(
 router.route("/partners")
   .get(getAllPartners);
 
-router.route("/partners/:ownerId")
-  .get(getPropertiesOfPartnerById);
-
 router.route("/:userId")
   .get(verifyToken, allowedToSameUserAnd(userRoles.ADMIN), getUserInformation)
   .patch(verifyToken, allowedToSameUserAnd(userRoles.ADMIN), updateUserById);
