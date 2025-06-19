@@ -684,7 +684,7 @@ exports.getPropertiesOfPartnerById = asyncWrapper(async (req, res, next) => {
     return next(error);
   }
 
-  const partner = await User.findById(ownerId);
+  const partner = await User.findOne({ _id: ownerId, role: userRoles.PARTNER });
   if (!partner) {
     const error = appError.create(
       "Partner not found",
