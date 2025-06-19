@@ -17,6 +17,7 @@ const {
   changePinCode,
   becomeInvestor,
   getAllPartners,
+  getPropertiesOfPartner: getPropertiesOfPartnerById,
 } = require('../Controllers/userController');
 const {
   verifyToken,
@@ -52,6 +53,9 @@ router.post(
 
 router.route("/partners")
   .get(getAllPartners);
+
+router.route("/partners/:ownerId")
+  .get(getPropertiesOfPartnerById);
 
 router.route("/:userId")
   .get(verifyToken, allowedToSameUserAnd(userRoles.ADMIN), getUserInformation)

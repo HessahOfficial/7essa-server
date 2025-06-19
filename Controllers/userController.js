@@ -7,6 +7,7 @@ const appError = require('../utils/appError');
 const httpStatusText = require('../utils/constants/httpStatusText');
 const verifyNationalId = require('../utils/verifyNationalId');
 const userRoles = require('../utils/constants/userRoles');
+const Property = require('../Models/propertyModel');
 
 exports.getUserFavourites = async (req, res) => {
   try {
@@ -660,4 +661,49 @@ exports.getAllPartners = asyncWrapper(async (req, res, next) => {
     }
   });
 });
+
+exports.getPropertiesOfPartnerById = asyncWrapper(async (req, res, next) => {
+
+  const { ownerId } = req.params;
+
+  if (!ownerId) {
+    const error = appError.create(
+      'Owner id is required as a parameter!',
+      400,
+      httpStatusText.ERROR,
+    );
+    return next(error);
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(ownerId)) {
+    const error = appError.create(
+      'Invalid owner Id format!',
+      400,
+      httpStatusText.ERROR,
+    );
+    return next(error);
+  }
+
+  const partner = await User.findById(ownerId);
+  if (!partner) {
+    const error = appError.create(
+      "Partner not found",
+      404,
+      httpStatusText.ERROR
+    );
+    return next(error);
+  }
+
+  const propertiesOfPartner = Property.find({ owner: ownerId });
+
+  res.stats(200).json({
+    status: httpStatusText.SUCCESS,
+    message: "Properties of partner is retrieved successfully!",
+    data: {
+      properties: propertiesOfPartner
+    }
+  });
+});
+
+
 
