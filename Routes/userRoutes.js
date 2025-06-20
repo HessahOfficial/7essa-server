@@ -17,7 +17,6 @@ const {
   changePinCode,
   becomeInvestor,
   getAllPartners,
-  getPropertiesOfPartner: getPropertiesOfPartnerById,
 } = require('../Controllers/userController');
 const {
   verifyToken,
@@ -70,4 +69,3 @@ router.post(
 router.post('/notifyUser', sendPushNotificationToUser);
 
 module.exports = router;
-

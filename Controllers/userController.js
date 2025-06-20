@@ -660,8 +660,3 @@ exports.getAllPartners = asyncWrapper(async (req, res, next) => {
     }
   });
 });
-
-
-
-
-
