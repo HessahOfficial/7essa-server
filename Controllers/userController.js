@@ -660,7 +660,7 @@ exports.getAllPartners = asyncWrapper(async (req, res, next) => {
     status: httpStatusText.SUCCESS,
     message: "All partners retrieved Successfully!",
     data: {
-      parteners
+      partners
     }
   });
 });
