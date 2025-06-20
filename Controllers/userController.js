@@ -654,7 +654,7 @@ exports.becomeInvestor = asyncWrapper(
 );
 
 exports.getAllPartners = asyncWrapper(async (req, res, next) => {
-  const parteners = await User.find({ role: userRoles.PARTNER });
+  const partners = await User.find({ role: userRoles.PARTNER });
 
   res.status(200).json({
     status: httpStatusText.SUCCESS,
