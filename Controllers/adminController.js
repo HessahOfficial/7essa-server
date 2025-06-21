@@ -187,15 +187,102 @@ exports.deleteProperty = asyncWrapper(async (req, res, next) => {
 
 //for payments
 exports.getAllPayments = asyncWrapper(async (req, res, next) => {
-  const payments = await Payment.find({});
-  if (!payments) {
-    const error = appError.create('No payments found', 404, httpStatusText.FAIL);
-    return next(error);
+  const query = req.query;
+  const limit = parseInt(query.limit) || 12;
+  const page = parseInt(query.page) || 1;
+  const skip = (page - 1) * limit;
+
+  const userId = query.userId || '';
+  const paymentType = query.paymentType || '';
+  const paymentStatus = query.paymentStatus || '';
+  const paymentMethod = query.paymentMethod || '';
+  const paymentDate = query.paymentDate || '';
+  const minPaymentDate = query.minPaymentDate || '';
+  const maxPaymentDate = query.maxPaymentDate || '';
+  const sort = query.sort || '-paymentDate';
+
+  const matchStage = {};
+
+  // Filter based on role or passed userId
+  if (req.currentUser.role !== userRoles.ADMIN) {
+    matchStage.userId = new mongoose.Types.ObjectId(req.currentUser.id);
+  } else if (userId) {
+    matchStage.userId = new mongoose.Types.ObjectId(userId);
   }
+
+  if (paymentType) matchStage.paymentType = paymentType;
+  if (paymentStatus) matchStage.paymentStatus = paymentStatus;
+  if (paymentMethod) matchStage.paymentMethod = paymentMethod;
+  if (paymentDate) matchStage.paymentDate = new Date(paymentDate);
+  if (minPaymentDate) matchStage.paymentDate = { $gte: new Date(minPaymentDate) };
+  if (maxPaymentDate) matchStage.paymentDate = {
+    ...(matchStage.paymentDate || {}),
+    $lte: new Date(maxPaymentDate),
+  };
+
+  const aggregation = [
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'user'
+      }
+    },
+    { $unwind: '$user' },
+    { $match: matchStage },
+    {
+      $sort: {
+        [sort.replace('-', '')]: sort.startsWith('-') ? -1 : 1
+      }
+    },
+    { $skip: skip },
+    { $limit: limit },
+    {
+      $project: {
+        _id: 1,
+        amount: 1,
+        displayingAmount: 1,
+        paymentType: 1,
+        paymentMethod: 1,
+        paymentDate: 1,
+        paymentStatus: 1,
+        userId: {
+          avatar: '$user.avatar',
+          firstName: '$user.firstName',
+          lastName: '$user.lastName'
+        }
+      }
+    }
+  ];
+
+  const payments = await Payment.aggregate(aggregation);
+
+  const countAggregation = await Payment.aggregate([
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'user'
+      }
+    },
+    { $unwind: '$user' },
+    { $match: matchStage },
+    { $count: 'total' }
+  ]);
+
+  const totalPayments = countAggregation[0]?.total || 0;
+  const totalPages = Math.ceil(totalPayments / limit);
+
   res.status(200).json({
     status: 'success',
-    results: payments.length,
-    data: payments
+    payments: payments.length,
+    data: {
+      payments,
+      totalPayments,
+      totalPages
+    }
   });
 });
 
