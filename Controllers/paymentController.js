@@ -6,8 +6,7 @@ const moment = require('moment-timezone');
 const appError = require('../utils/appError');
 const httpStatusText = require('../utils/constants/httpStatusText');
 
-const egyptTime = moment().tz('Africa/Cairo').format('hh:mm A');
-
+const egyptTime = moment.tz('Africa/Cairo').utc().format(); // Default format is ISO 8601
 exports.createPayment = asyncWrapper(async (req, res, next) => {
     let userId = req.currentUser.id;
     const { amount, paymentMethod, paymentType } = req.body;

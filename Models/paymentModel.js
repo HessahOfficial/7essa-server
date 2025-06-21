@@ -34,7 +34,21 @@ const paymentSchema = new mongoose.Schema({
   paymentDate: {
     type: String,
     required: [true, 'payment date is required'],
+  },
+  displayingAmount: {
+    type: String,
+    default: '0 EGP'
   }
+});
+
+// Hook to auto-generate displayingAmount
+paymentSchema.pre('save', function (next) {
+  if (this.amount && this.currency) {
+    this.displayingAmount = `${this.amount} ${this.currency}`;
+  } else {
+    this.displayingAmount = '0 EGP'; // Default fallback
+  }
+  next();
 });
 
 const Payment = mongoose.model('Payment', paymentSchema);
