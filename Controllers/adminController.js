@@ -193,6 +193,7 @@ exports.getAllPayments = asyncWrapper(async (req, res, next) => {
   const skip = (page - 1) * limit;
 
   const userId = query.userId || '';
+  const search = query.search || '';
   const paymentType = query.paymentType || '';
   const paymentStatus = query.paymentStatus || '';
   const paymentMethod = query.paymentMethod || '';
@@ -220,6 +221,27 @@ exports.getAllPayments = asyncWrapper(async (req, res, next) => {
     $lte: new Date(maxPaymentDate),
   };
 
+  const searchFilter = search
+    ? {
+        $or: [
+          {
+            'user._id': mongoose.Types.ObjectId.isValid(search)
+              ? new mongoose.Types.ObjectId(search)
+              : null,
+          },
+          {
+            $expr: {
+              $regexMatch: {
+                input: { $concat: ['$user.firstName', ' ', '$user.lastName'] },
+                regex: search,
+                options: 'i',
+              },
+            },
+          },
+        ],
+      }
+    : {};
+
   const aggregation = [
     {
       $lookup: {
@@ -230,11 +252,16 @@ exports.getAllPayments = asyncWrapper(async (req, res, next) => {
       }
     },
     { $unwind: '$user' },
-    { $match: matchStage },
+    {
+      $match: {
+        ...matchStage,
+        ...(search ? searchFilter : {}),
+      },
+    },
     {
       $sort: {
-        [sort.replace('-', '')]: sort.startsWith('-') ? -1 : 1
-      }
+        [sort.replace('-', '')]: sort.startsWith('-') ? -1 : 1,
+      },
     },
     { $skip: skip },
     { $limit: limit },
@@ -268,8 +295,13 @@ exports.getAllPayments = asyncWrapper(async (req, res, next) => {
       }
     },
     { $unwind: '$user' },
-    { $match: matchStage },
-    { $count: 'total' }
+    {
+      $match: {
+        ...matchStage,
+        ...(search ? searchFilter : {}),
+      },
+    },
+    { $count: 'total' },
   ]);
 
   const totalPayments = countAggregation[0]?.total || 0;
@@ -281,8 +313,8 @@ exports.getAllPayments = asyncWrapper(async (req, res, next) => {
     data: {
       payments,
       totalPayments,
-      totalPages
-    }
+      totalPages,
+    },
   });
 });
 
