@@ -25,7 +25,13 @@ const propertySchema = new mongoose.Schema({
   },
   images: {
     type: [String],
-    default: ["https://cdn.pixabay.com/photo/2017/06/16/15/58/luxury-home-2409518_960_720.jpg"]
+    default: ["https://cdn.pixabay.com/photo/2017/06/16/15/58/luxury-home-2409518_960_720.jpg"],
+    validate: {
+      validator: function (array) {
+        return array.length <= 15;
+      },
+      message: 'The images array can have a maximum of 15 items.',
+    },
   },
   totalShares: {
     type: Number,

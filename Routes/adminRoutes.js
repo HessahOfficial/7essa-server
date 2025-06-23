@@ -2,6 +2,7 @@ const express = require('express');
 const adminController = require('../Controllers/adminController');
 const allowedTo = require('../Middlewares/allowedTo');
 const userRoles = require('../utils/constants/userRoles');
+const { uploadMultiple } = require('../Config/cloudinaryConfig');
 const router = express.Router();
 const {
   verifyRefToken,
@@ -10,7 +11,7 @@ const {
 //properties
 router
   .route('/properties')
-  .post(adminController.createProperty)
+  .post(uploadMultiple, adminController.createProperty)
   .get(adminController.getAllProperties);
 
 router
