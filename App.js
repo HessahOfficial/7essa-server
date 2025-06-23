@@ -10,6 +10,7 @@ const investmentRouter = require('./Routes/investmentRoutes');
 const userRouter = require('./Routes/userRoutes');
 const paymentRouter = require('./Routes/paymentRoutes');
 const propertyRouter = require('./Routes/propertyRoutes');
+const ourEmailRouter = require('./Routes/email.route');
 
 const { verifyToken } = require('./Middlewares/verifyToken');
 const allowedTo = require('./Middlewares/allowedTo');
@@ -48,6 +49,8 @@ app.use('/investments', investmentRouter);
 app.use('/users', verifyToken, userRouter);
 app.use('/payments', paymentRouter);
 app.use('/properties', verifyToken, propertyRouter);
+app.use('/emails', ourEmailRouter);
+
 
 //global error handler
 app.use((error, req, res, next) => {
