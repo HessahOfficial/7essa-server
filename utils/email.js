@@ -22,12 +22,13 @@ module.exports = class Email {
   }
 
   // Send the actual email
-  async send(template, subject) {
+  async send(template, subject , payload = {}) {
     // 1) Render HTML based on a pug template
     const html = pug.renderFile(`${__dirname}/../views/email/${template}.pug`, {
       firstName: this.firstName,
       url: this.url,
       subject,
+      ...payload
     });
 
     // 2) Define email options
@@ -61,4 +62,16 @@ module.exports = class Email {
     );
   }
 
+  async sendContactConfirmation(payload) {
+    await this.send("contactUserConfirmation", "We've received your message", payload);
+  }
+
+  async sendContactToAdmin(payload) {
+    await this.send("contactAdminNotification", "New Contact Form Submission", payload);
+  }
+
+  async sendContactAnswerToUser(payload) {
+    await this.send("contactUserAnswer", `Re: ${payload.subject}`, payload);
+  }
 };
+
