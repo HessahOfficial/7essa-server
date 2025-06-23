@@ -46,11 +46,11 @@ const propertySchema = new mongoose.Schema({
     required: [true, 'yearly Payment is required'],
   },
   price: {
-    type: [Number],
+    type: Number,
     required: [true, 'Property must have a price'],
   },
   pricePerShare: {
-    type: [Number],
+    type: Number,
     required: [true, 'price per share is required'],
   },
   estimatedExitDate: {
@@ -120,15 +120,33 @@ const propertySchema = new mongoose.Schema({
       'Property must have the investment documents',
     ],
   },
+  priceHistory: [{
+    price: Number,
+    date: { type: Date, default: Date.now }
+  }],
+  pricePerShareHistory: [{
+    pricePerShare: Number,
+    date: { type: Date, default: Date.now }
+  }],
 });
 
 propertySchema.pre('save', function (next) {
-  // Ensure that the displayingPrice is set based on the pricePerShare
-  if (this.pricePerShare && this.pricePerShare.length > 0) {
-    this.displayingPrice = `${this.pricePerShare[0]} LE/Share`;
+  // Set displayingPrice
+  if (this.pricePerShare) {
+    this.displayingPrice = `${this.pricePerShare} LE/Share`;
   } else {
-    this.displayingPrice = '2000 LE/Share'; // Default value if pricePerShare is not set
+    this.displayingPrice = '2000 LE/Share';
   }
+
+  if (this.isNew) {
+    if (this.price) {
+      this.priceHistory = [{ price: this.price }];
+    }
+    if (this.pricePerShare) {
+      this.pricePerShareHistory = [{ pricePerShare: this.pricePerShare }];
+    }
+  }
+
   next();
 });
 
