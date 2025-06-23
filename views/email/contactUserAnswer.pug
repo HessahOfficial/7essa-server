@@ -1,0 +1,24 @@
+extends baseEmail
+
+block content
+  tr
+    td.wrapper(style="font-family: Helvetica, sans-serif; font-size: 16px; padding: 24px;")
+      p(style="margin-bottom: 16px;") Hi #{fullName},
+
+      p(style="margin-bottom: 16px;")
+        | This is a response to your message titled:
+        br
+        strong #{subject}
+
+      hr
+
+      p(style="font-weight: bold; margin-bottom: 4px;") Your original message:
+      p(style="margin-bottom: 16px; white-space: pre-wrap;") #{originalMessage}
+
+      p(style="font-weight: bold; margin-bottom: 4px;") Our response:
+      p(style="white-space: pre-wrap;") #{answeredMessage}
+
+      hr
+      p(style="margin-top: 16px;") If you have more questions, just reply to this email. We're here to help 😊
+      p Regards,
+      p The Hessah Support Team

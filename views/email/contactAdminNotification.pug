@@ -1,0 +1,25 @@
+extends baseEmail
+
+block content
+  tr
+    td.wrapper(style="font-family: Helvetica, sans-serif; font-size: 16px; padding: 24px;")
+      p Hello Admin,
+      p You have received a new message from the contact form. Details are as follows:
+      ul
+        li
+          strong Full Name: 
+          | #{fullName}
+        li
+          strong Email: 
+          | #{email}
+        li
+          strong Phone Number: 
+          | #{phoneNumber}
+        li
+          strong Subject: 
+          | #{subject}
+        li
+          strong Message:
+          br
+          | #{messageBody}
+      p Please login to the dashboard to mark as read or reply.
