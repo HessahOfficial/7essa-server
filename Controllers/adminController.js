@@ -12,7 +12,7 @@ const USER_ACTIVITY = require('../utils/constants/USER_ACTIVITY');
 const userRoles = require('../utils/constants/userRoles');
 
 //For properties
-exports.getAllProperties = asyncWrapper(async(req,res,next)=>{
+exports.getAllProperties = asyncWrapper(async (req, res, next) => {
   const properties = await Property.find({});
   if (!properties) {
     const error = appError.create('No properties found', 404, httpStatusText.FAIL);
@@ -25,7 +25,7 @@ exports.getAllProperties = asyncWrapper(async(req,res,next)=>{
   });
 });
 
-exports.getPropertyById = asyncWrapper(async (req, res,next) => {
+exports.getPropertyById = asyncWrapper(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
     const error = appError.create('Invalid property ID', 400, httpStatusText.FAIL);
     return next(error);
@@ -147,12 +147,14 @@ exports.updateProperty = asyncWrapper(async (req, res, next) => {
   }
 
   if (typeof req.body.price === 'number') {
-    property.price.push(req.body.price);
-    delete req.body.price; 
+    property.priceHistory.push({ price: req.body.price });
+    property.price = req.body.price;
+    delete req.body.price;
   }
 
   if (typeof req.body.pricePerShare === 'number') {
-    property.pricePerShare.push(req.body.pricePerShare);
+    property.pricePerShareHistory.push({ pricePerShare: req.body.pricePerShare });
+    property.pricePerShare = req.body.pricePerShare;
     delete req.body.pricePerShare;
   }
   Object.keys(req.body).forEach(key => {
@@ -222,23 +224,23 @@ exports.getAllPayments = asyncWrapper(async (req, res, next) => {
 
   const searchFilter = search
     ? {
-        $or: [
-          {
-            'user._id': mongoose.Types.ObjectId.isValid(search)
-              ? new mongoose.Types.ObjectId(search)
-              : null,
-          },
-          {
-            $expr: {
-              $regexMatch: {
-                input: { $concat: ['$user.firstName', ' ', '$user.lastName'] },
-                regex: search,
-                options: 'i',
-              },
+      $or: [
+        {
+          'user._id': mongoose.Types.ObjectId.isValid(search)
+            ? new mongoose.Types.ObjectId(search)
+            : null,
+        },
+        {
+          $expr: {
+            $regexMatch: {
+              input: { $concat: ['$user.firstName', ' ', '$user.lastName'] },
+              regex: search,
+              options: 'i',
             },
           },
-        ],
-      }
+        },
+      ],
+    }
     : {};
 
   const aggregation = [
@@ -576,22 +578,22 @@ exports.getUserById = asyncWrapper(async (req, res, next) => {
 });
 
 exports.getUserByEmail = asyncWrapper(async (req, res) => {
-    const { email } = req.body;
+  const { email } = req.body;
 
-    if (!email) {
-        return res.status(400).json({ error: 'Email is required' });
-    }
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
 
-    const user = await User.findOne({ email });
+  const user = await User.findOne({ email });
 
-    if (!user) {
-        return res.status(404).json({ error: 'User not found' });
-    }
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
 
-    res.status(200).json({
-        status: 'success',
-        data: { user }
-    });
+  res.status(200).json({
+    status: 'success',
+    data: { user }
+  });
 });
 
 exports.getPropPrices = asyncWrapper(async (req, res, next) => {
@@ -714,10 +716,10 @@ exports.getAllInvestmentsOnProperty = asyncWrapper(async (req, res, next) => {
   });
 });
 
-exports.getAllUsersInvestedOnProperty= asyncWrapper(async (req, res,next) => {
+exports.getAllUsersInvestedOnProperty = asyncWrapper(async (req, res, next) => {
   const investments = await Investment.find({ propertyId: req.params.id });
   const users = await User.find({ _id: { $in: investments.map(investment => investment.userId) } });
-  if (!investments ||!users) {
+  if (!investments || !users) {
     const error = appError.create('No investments or users found', 404, httpStatusText.FAIL);
     return next(error);
   }
