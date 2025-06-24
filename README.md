@@ -104,7 +104,7 @@ npm start
 - **2. [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/) Guidelines:**
 > Follow a disciplined branching strategy (Example) such as using master/main for production, development for ongoing work, and feature branches for new functionalities or fixes.
 - **3. JSON Response ([JSend Rules](https://github.com/omniti-labs/jsend)) Guidelines:**
->Implement a uniform response structure ( Example ) adhering to JSend specifications for successful and error responses, coupled with appropriate HTTP status codes.
+>Implement a uniform response structure (Example) adhering to JSend specifications for successful and error responses, coupled with appropriate HTTP status codes.
 
 ## 📝 License
 
