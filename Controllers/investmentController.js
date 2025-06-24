@@ -52,7 +52,7 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
       existingInvestment.netGains += netGains;
       await existingInvestment.save();
 
-   
+
       user.balance -= investmentAmount;
       await user.save();
 
@@ -102,7 +102,7 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
         investmentAmount,
       });
 
-      
+
       user.balance -= investmentAmount;
       await user.save();
 
@@ -126,7 +126,7 @@ exports.getInvestmentById = asyncWrapper(async (req, res, next) => {
     const error = appError.create('Investment not found', 404, httpStatusText.FAIL);
     return next(error);
   }
-  if (req.currentUser.id !== investment.userId.toString() && req.currentUser.role !== userRoles.ADMIN ) {
+  if (req.currentUser.id !== investment.userId.toString() && req.currentUser.role !== userRoles.ADMIN) {
     const error = appError.create('Unauthorized to view this investment', 403, httpStatusText.FAIL);
     return next(error);
   }
@@ -152,7 +152,7 @@ exports.deleteInvestmentById = asyncWrapper(async (req, res, next) => {
     const error = appError.create('Investment not found', 404, httpStatusText.FAIL);
     return next(error);
   }
-  if (req.currentUser.id !== investment.userId.toString() && req.currentUser.role !== userRoles.ADMIN ) {
+  if (req.currentUser.id !== investment.userId.toString() && req.currentUser.role !== userRoles.ADMIN) {
     const error = appError.create('Unauthorized to delete this investment', 403, httpStatusText.FAIL);
     return next(error);
   }
@@ -264,12 +264,13 @@ exports.getAllInvestments = asyncWrapper(async (req, res, next) => {
           lastName: '$user.lastName'
         },
         propertyId: {
-          title: '$property.title'
+          title: '$property.title',
+          images: '$property.images',
         }
       }
     }
   ];
-  
+
   const investments = await Investment.aggregate(aggregation);
 
   const countAggregation = await Investment.aggregate([
