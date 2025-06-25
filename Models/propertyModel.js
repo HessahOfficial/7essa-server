@@ -50,7 +50,7 @@ const propertySchema = new mongoose.Schema({
     required: [true, 'Property must have a price'],
   },
   pricePerShare: {
-    type: Number,
+    type: [Number],
     required: [true, 'price per share is required'],
   },
   estimatedExitDate: {
