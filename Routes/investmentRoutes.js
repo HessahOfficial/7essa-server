@@ -33,6 +33,7 @@ router
     verifyToken,
     investmentController.getMyreturnsOnInvestment,
   );
+  router.post('/:id/sell', verifyToken, investmentController.sellInvestment);
 
 module.exports = router;
 

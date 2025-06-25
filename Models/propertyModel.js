@@ -25,7 +25,13 @@ const propertySchema = new mongoose.Schema({
   },
   images: {
     type: [String],
-    default: ["https://cdn.pixabay.com/photo/2017/06/16/15/58/luxury-home-2409518_960_720.jpg"]
+    default: ["https://cdn.pixabay.com/photo/2017/06/16/15/58/luxury-home-2409518_960_720.jpg"],
+    validate: {
+      validator: function (array) {
+        return array.length <= 15;
+      },
+      message: 'The images array can have a maximum of 15 items.',
+    },
   },
   totalShares: {
     type: Number,
@@ -40,7 +46,7 @@ const propertySchema = new mongoose.Schema({
     required: [true, 'yearly Payment is required'],
   },
   price: {
-    type: [Number],
+    type: Number,
     required: [true, 'Property must have a price'],
   },
   pricePerShare: {
@@ -114,15 +120,33 @@ const propertySchema = new mongoose.Schema({
       'Property must have the investment documents',
     ],
   },
+  priceHistory: [{
+    price: Number,
+    date: { type: Date, default: Date.now }
+  }],
+  pricePerShareHistory: [{
+    pricePerShare: Number,
+    date: { type: Date, default: Date.now }
+  }],
 });
 
 propertySchema.pre('save', function (next) {
-  // Ensure that the displayingPrice is set based on the pricePerShare
-  if (this.pricePerShare && this.pricePerShare.length > 0) {
-    this.displayingPrice = `${this.pricePerShare[0]} LE/Share`;
+  // Set displayingPrice
+  if (this.pricePerShare) {
+    this.displayingPrice = `${this.pricePerShare} LE/Share`;
   } else {
-    this.displayingPrice = '2000 LE/Share'; // Default value if pricePerShare is not set
+    this.displayingPrice = '2000 LE/Share';
   }
+
+  if (this.isNew) {
+    if (this.price) {
+      this.priceHistory = [{ price: this.price }];
+    }
+    if (this.pricePerShare) {
+      this.pricePerShareHistory = [{ pricePerShare: this.pricePerShare }];
+    }
+  }
+
   next();
 });
 
