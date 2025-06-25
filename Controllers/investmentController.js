@@ -6,6 +6,7 @@ const appError = require('../utils/appError');
 const httpStatusText = require('../utils/constants/httpStatusText');
 const User = require('../Models/userModel');
 const userRoles = require('../utils/constants/userRoles');
+const Request = require('../Models/Request');
 
 
 exports.makeInvestment = asyncWrapper(async (req, res, next) => {
@@ -324,3 +325,33 @@ exports.getMyreturnsOnInvestment = asyncWrapper(async (req, res, next) => {
   }
 });
 
+exports.sellInvestment = asyncWrapper(async (req, res, next) => {
+  const userId = req.currentUser.id;
+  const investmentId = req.params.id;
+
+  if (!mongoose.Types.ObjectId.isValid(investmentId)) {
+    return next(appError.create('Invalid investment ID', 400, httpStatusText.FAIL));
+  }
+  const investment = await Investment.findById(investmentId);
+
+  if (!investment) {
+    return next(appError.create('Investment not found', 404, httpStatusText.FAIL));
+  }
+
+  if (investment.userId.toString() !== userId) {
+    return next(appError.create('You are not allowed to sell this investment', 403, httpStatusText.FAIL));
+  }
+  const sellRequest = await Request.create({
+    userId,
+    investmentId,
+    requestType: 'sell investment',
+  });
+
+  res.status(201).json({
+    status: 'success',
+    message: 'Sell request submitted successfully and pending admin approval.',
+    data: {
+      request: sellRequest,
+    },
+  });
+});

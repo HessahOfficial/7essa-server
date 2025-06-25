@@ -10,6 +10,7 @@ const validator = require('validator');
 const httpStatusText = require('../utils/constants/httpStatusText');
 const USER_ACTIVITY = require('../utils/constants/USER_ACTIVITY');
 const userRoles = require('../utils/constants/userRoles');
+const Request = require('../Models/Request');
 
 //For properties
 exports.getAllProperties = asyncWrapper(async (req, res, next) => {
@@ -730,4 +731,49 @@ exports.getAllUsersInvestedOnProperty = asyncWrapper(async (req, res, next) => {
   });
 });
 
+exports.acceptSellInvestmentRequest = asyncWrapper(async (req, res, next) => {
+  const request = await Request.findByIdAndUpdate(
+    req.params.id,
+    { status: 'approved' },
+    { new: true, runValidators: true }
+  );
+  if (!request) {
+    const error = appError.create('Request not found', 404, httpStatusText.FAIL);
+    return next(error);
+  }
 
+  const investment = await Investment.findById(request.investmentId);
+  if (!investment) {
+    const error = appError.create('Investment not found', 404, httpStatusText.FAIL);
+    return next(error);
+  }
+  //change the investment status to 'sold'
+  investment.investmentStatus = 'sold';
+  await investment.save();
+  const user = await User.findById(investment.userId);
+  if (!user) {
+    const error = appError.create('User not found', 404, httpStatusText.FAIL);
+    return next(error);
+  }
+  user.balance += investment.investmentAmount;
+  res.status(200).json({
+    status: 'success',
+    data: { request, investment }
+  });
+})
+
+exports.rejectSellInvestmentRequest = asyncWrapper(async (req, res, next) => {
+  const request = await Request.findByIdAndUpdate(
+    req.params.id,
+    { status: 'rejected' },
+    { new: true, runValidators: true }
+  );
+  if (!request) {
+    const error = appError.create('Request not found', 404, httpStatusText.FAIL);
+    return next(error);
+  }
+  res.status(200).json({
+    status: 'success',
+    data: { request }
+  });
+});
