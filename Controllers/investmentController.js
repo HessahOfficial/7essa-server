@@ -7,6 +7,7 @@ const httpStatusText = require('../utils/constants/httpStatusText');
 const User = require('../Models/userModel');
 const userRoles = require('../utils/constants/userRoles');
 const Request = require('../Models/Request');
+const Transaction = require('../Models/TransactionModel');
 
 
 exports.makeInvestment = asyncWrapper(async (req, res, next) => {
@@ -44,7 +45,7 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
     const netGains = totalReturns - investmentAmount;
     const totalSharesPercentage = ((existingInvestment?.numOfShares || 0) + numOfShares) / property.totalShares * 100;
 
-    if (existingInvestment) {
+    if (existingInvestment && existingInvestment.investmentStatus === 'active') {
       existingInvestment.numOfShares += numOfShares;
       existingInvestment.investmentAmount += investmentAmount;
       existingInvestment.monthlyReturns += monthlyReturns;
@@ -56,6 +57,12 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
 
       user.balance -= investmentAmount;
       await user.save();
+await Transaction.create({
+  userId,
+  investmentId: existingInvestment?._id || investment._id,
+  transactionType: 'investing',
+  amount: investmentAmount,
+});
 
       return res.status(200).json({ investment: existingInvestment });
     } else {
@@ -73,6 +80,12 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
 
       user.balance -= investmentAmount;
       await user.save();
+await Transaction.create({
+  userId,
+  investmentId: existingInvestment?._id || investment._id,
+  transactionType: 'investing',
+  amount: investmentAmount,
+});
 
       return res.status(201).json({ investment });
     }
@@ -81,7 +94,7 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
     const netGains = property.priceSold - investmentAmount;
     const totalSharesPercentage = ((existingInvestment?.numOfShares || 0) + numOfShares) / property.totalShares * 100;
 
-    if (existingInvestment) {
+    if (existingInvestment && existingInvestment.investmentStatus === 'active') {
       existingInvestment.numOfShares += numOfShares;
       existingInvestment.investmentAmount += investmentAmount;
       existingInvestment.netGains += netGains;
@@ -90,6 +103,12 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
 
       user.balance -= investmentAmount;
       await user.save();
+await Transaction.create({
+  userId,
+  investmentId: existingInvestment?._id || investment._id,
+  transactionType: 'investing',
+  amount: investmentAmount,
+});
 
       return res.status(200).json({ investment: existingInvestment });
     } else {
@@ -106,6 +125,12 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
 
       user.balance -= investmentAmount;
       await user.save();
+await Transaction.create({
+  userId,
+  investmentId: existingInvestment?._id || investment._id,
+  transactionType: 'investing',
+  amount: investmentAmount,
+});
 
       return res.status(201).json({ investment });
     }

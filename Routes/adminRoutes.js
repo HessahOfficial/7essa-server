@@ -1,5 +1,6 @@
 const express = require('express');
 const adminController = require('../Controllers/adminController');
+const TransactionController = require('../Controllers/TransactionController');
 const allowedTo = require('../Middlewares/allowedTo');
 const userRoles = require('../utils/constants/userRoles');
 const { uploadMultiple } = require('../Config/cloudinaryConfig');
@@ -79,5 +80,19 @@ router
 
 router.route('/acceptSellInvestmentRequest/:id').post(adminController.acceptSellInvestmentRequest);
 router.route('/rejectSellInvestmentRequest/:id').post(adminController.rejectSellInvestmentRequest);
+router
+  .route('/getAllRequests')
+  .get(adminController.getAllRequests);
+
+
+//transactions
+router
+  .route('/transactions')
+  .get(TransactionController.getAllTransactions);
+router
+  .route('/transactions/:id')
+  .get(TransactionController.getTransactionById)
+  .delete(TransactionController.deleteTransactionById);
+
 module.exports = router;
 
