@@ -1,4 +1,4 @@
-# 7essa Server 🏢💰 
+# 7essa Server 🏢💰
 
 This is the backend repository for **7essa**, a sophisticated real estate investment platform. Built with **Node.js, Express, MongoDB**, and following RESTful API design principles, this server provides robust functionality for property investments, user management, and payment processing.
 
