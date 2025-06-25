@@ -292,6 +292,7 @@ exports.getAllInvestments = asyncWrapper(async (req, res, next) => {
         propertyId: {
           title: '$property.title',
           images: '$property.images',
+          id: '$property._id'
         }
       }
     }
