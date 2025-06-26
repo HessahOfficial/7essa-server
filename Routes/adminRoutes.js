@@ -78,11 +78,7 @@ router
   .route('/getAllusersInvestedOnproperty/:id')
   .get(adminController.getAllUsersInvestedOnProperty);
 
-router.route('/acceptSellInvestmentRequest/:id').post(adminController.acceptSellInvestmentRequest);
-router.route('/rejectSellInvestmentRequest/:id').post(adminController.rejectSellInvestmentRequest);
-router
-  .route('/getAllRequests')
-  .get(adminController.getAllRequests);
+
 
 
 //transactions

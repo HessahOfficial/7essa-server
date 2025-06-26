@@ -6,7 +6,6 @@ const appError = require('../utils/appError');
 const httpStatusText = require('../utils/constants/httpStatusText');
 const User = require('../Models/userModel');
 const userRoles = require('../utils/constants/userRoles');
-const Request = require('../Models/Request');
 const Transaction = require('../Models/TransactionModel');
 
 
@@ -21,7 +20,7 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
   }
 
   const numOfShares = req.body.numberOfShares;
-  const sharePrice = property.pricePerShare[property.pricePerShare.length - 1];
+  const sharePrice = property.pricePerShare
 
   if (numOfShares > property.availableShares) {
     return next(appError.create('Number of shares exceeds available shares', 400, httpStatusText.FAIL));
@@ -141,24 +140,33 @@ await Transaction.create({
 
 
 
-
 exports.getInvestmentById = asyncWrapper(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    const error = appError.create('Invalid property ID', 400, httpStatusText.FAIL);
+    const error = appError.create('Invalid investment ID', 400, httpStatusText.FAIL);
     return next(error);
   }
+
   const investment = await Investment.findById(req.params.id);
   if (!investment) {
     const error = appError.create('Investment not found', 404, httpStatusText.FAIL);
     return next(error);
   }
+
   if (req.currentUser.id !== investment.userId.toString() && req.currentUser.role !== userRoles.ADMIN) {
     const error = appError.create('Unauthorized to view this investment', 403, httpStatusText.FAIL);
     return next(error);
   }
-  const property = await Property.findById(investment.propertyId);
 
-  const sharePriceVariationPercentage = ((property.pricePerShare[property.pricePerShare.length - 1] - investment.sharePrice) / 100);
+  const property = await Property.findById(investment.propertyId);
+  if (!property) {
+    const error = appError.create('Property not found', 404, httpStatusText.FAIL);
+    return next(error);
+  }
+
+  const priceNumbers = property.pricePerShareHistory.map(entry => entry.pricePerShare);
+  const latestPrice = priceNumbers.at(-1); 
+
+  const sharePriceVariationPercentage = ((latestPrice - investment.sharePrice) / investment.sharePrice) * 100;
 
   return res.status(200).json({
     investment: {
@@ -167,6 +175,7 @@ exports.getInvestmentById = asyncWrapper(async (req, res, next) => {
     },
   });
 });
+
 
 exports.deleteInvestmentById = asyncWrapper(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -367,17 +376,26 @@ exports.sellInvestment = asyncWrapper(async (req, res, next) => {
   if (investment.userId.toString() !== userId) {
     return next(appError.create('You are not allowed to sell this investment', 403, httpStatusText.FAIL));
   }
-  const sellRequest = await Request.create({
-    userId,
-    investmentId,
-    requestType: 'sell investment',
-  });
 
-  res.status(201).json({
-    status: 'success',
-    message: 'Sell request submitted successfully and pending admin approval.',
-    data: {
-      request: sellRequest,
-    },
+  const property = await Property.findById(investment.propertyId);
+  if (!property) {
+    return next(appError.create('Property not found', 404, httpStatusText.FAIL));
+  }
+  property.availableShares += investment.numOfShares;
+  const priceNumbers = property.pricePerShareHistory.map(entry => entry.pricePerShare);
+  const sharePrice = priceNumbers.at(-1);
+  const sellingPrice = investment.numOfShares * sharePrice;
+  const user = await User.findById(userId);
+  if (!user) {
+    return next(appError.create('User not found', 404, httpStatusText.FAIL));
+  }
+  user.balance += sellingPrice;
+  await user.save();
+  await Transaction.create({
+    userId,
+    investmentId: investment._id,
+    transactionType: 'selling',
+    amount: sellingPrice,
   });
+  investment.investmentStatus = 'sold';
 });
