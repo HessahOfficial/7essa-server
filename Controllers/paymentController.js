@@ -6,11 +6,18 @@ const moment = require('moment-timezone');
 const appError = require('../utils/appError');
 const httpStatusText = require('../utils/constants/httpStatusText');
 
-const egyptTime = moment.tz('Africa/Cairo').utc().format(); // Default format is ISO 8601
+const egyptTime = moment.tz('Africa/Cairo').utc().format();
 exports.createPayment = asyncWrapper(async (req, res, next) => {
     let userId = req.currentUser.id;
-    const { amount, paymentMethod, paymentType } = req.body;
+    const { paymentMethod, paymentType } = req.body;
+
+    let amount = parseInt(req.body.amount, 10);
+
+    console.log(amount, paymentMethod, paymentType);
+
     const screenshot = req.file ? req.file.path : null;
+    console.log('screenshot', screenshot);
+
     if (!screenshot) {
         const error = appError.create('Screenshot is required', 400, httpStatusText.FAIL);
         return next(error);
@@ -20,6 +27,7 @@ exports.createPayment = asyncWrapper(async (req, res, next) => {
         const error = appError.create('User ID is required and must be a string', 400, httpStatusText.FAIL);
         return next(error);
     }
+
     if (!mongoose.Types.ObjectId.isValid(userId)) {
         const error = appError.create('User ID is invalid', 400, httpStatusText.FAIL);
         return next(error);
@@ -31,8 +39,8 @@ exports.createPayment = asyncWrapper(async (req, res, next) => {
         return next(error);
     }
 
-    if (!amount || typeof amount !== 'number' || amount < 1000) {
-        const error = appError.create('Amount is required and must be at least 1000', 400, httpStatusText.FAIL);
+    if (!amount || isNaN(amount) || amount < 1000) {
+        const error = appError.create('Amount is required and must be a valid number greater than or equal to 1000', 400, httpStatusText.FAIL);
         return next(error);
     }
 
