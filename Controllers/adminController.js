@@ -10,6 +10,7 @@ const validator = require('validator');
 const httpStatusText = require('../utils/constants/httpStatusText');
 const USER_ACTIVITY = require('../utils/constants/USER_ACTIVITY');
 const userRoles = require('../utils/constants/userRoles');
+const Transaction = require('../Models/TransactionModel');
 
 //For properties
 exports.getAllProperties = asyncWrapper(async (req, res, next) => {
@@ -605,11 +606,10 @@ exports.getPropPrices = asyncWrapper(async (req, res, next) => {
   if (!property) {
     const error = appError.create('Property not found', 404, httpStatusText.FAIL);
     return next(error);
-  }
-  const price = await property.price;
+  };
   res.status(200).json({
     status: 'success',
-    data: { price },
+    data: property.priceHistory
   });
 });
 
@@ -729,5 +729,8 @@ exports.getAllUsersInvestedOnProperty = asyncWrapper(async (req, res, next) => {
     data: users
   });
 });
+
+
+
 
 

@@ -6,6 +6,7 @@ const appError = require('../utils/appError');
 const httpStatusText = require('../utils/constants/httpStatusText');
 const User = require('../Models/userModel');
 const userRoles = require('../utils/constants/userRoles');
+const Transaction = require('../Models/TransactionModel');
 
 
 exports.makeInvestment = asyncWrapper(async (req, res, next) => {
@@ -19,7 +20,7 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
   }
 
   const numOfShares = req.body.numberOfShares;
-  const sharePrice = property.pricePerShare[property.pricePerShare.length - 1];
+  const sharePrice = property.pricePerShare
 
   if (numOfShares > property.availableShares) {
     return next(appError.create('Number of shares exceeds available shares', 400, httpStatusText.FAIL));
@@ -43,7 +44,7 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
     const netGains = totalReturns - investmentAmount;
     const totalSharesPercentage = ((existingInvestment?.numOfShares || 0) + numOfShares) / property.totalShares * 100;
 
-    if (existingInvestment) {
+    if (existingInvestment && existingInvestment.investmentStatus === 'active') {
       existingInvestment.numOfShares += numOfShares;
       existingInvestment.investmentAmount += investmentAmount;
       existingInvestment.monthlyReturns += monthlyReturns;
@@ -52,9 +53,15 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
       existingInvestment.netGains += netGains;
       await existingInvestment.save();
 
-   
+
       user.balance -= investmentAmount;
       await user.save();
+await Transaction.create({
+  userId,
+  investmentId: existingInvestment?._id || investment._id,
+  transactionType: 'investing',
+  amount: investmentAmount,
+});
 
       return res.status(200).json({ investment: existingInvestment });
     } else {
@@ -72,6 +79,12 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
 
       user.balance -= investmentAmount;
       await user.save();
+await Transaction.create({
+  userId,
+  investmentId: existingInvestment?._id || investment._id,
+  transactionType: 'investing',
+  amount: investmentAmount,
+});
 
       return res.status(201).json({ investment });
     }
@@ -80,7 +93,7 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
     const netGains = property.priceSold - investmentAmount;
     const totalSharesPercentage = ((existingInvestment?.numOfShares || 0) + numOfShares) / property.totalShares * 100;
 
-    if (existingInvestment) {
+    if (existingInvestment && existingInvestment.investmentStatus === 'active') {
       existingInvestment.numOfShares += numOfShares;
       existingInvestment.investmentAmount += investmentAmount;
       existingInvestment.netGains += netGains;
@@ -89,6 +102,12 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
 
       user.balance -= investmentAmount;
       await user.save();
+await Transaction.create({
+  userId,
+  investmentId: existingInvestment?._id || investment._id,
+  transactionType: 'investing',
+  amount: investmentAmount,
+});
 
       return res.status(200).json({ investment: existingInvestment });
     } else {
@@ -102,9 +121,15 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
         investmentAmount,
       });
 
-      
+
       user.balance -= investmentAmount;
       await user.save();
+await Transaction.create({
+  userId,
+  investmentId: existingInvestment?._id || investment._id,
+  transactionType: 'investing',
+  amount: investmentAmount,
+});
 
       return res.status(201).json({ investment });
     }
@@ -115,24 +140,33 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
 
 
 
-
 exports.getInvestmentById = asyncWrapper(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    const error = appError.create('Invalid property ID', 400, httpStatusText.FAIL);
+    const error = appError.create('Invalid investment ID', 400, httpStatusText.FAIL);
     return next(error);
   }
+
   const investment = await Investment.findById(req.params.id);
   if (!investment) {
     const error = appError.create('Investment not found', 404, httpStatusText.FAIL);
     return next(error);
   }
-  if (req.currentUser.id !== investment.userId.toString() && req.currentUser.role !== userRoles.ADMIN ) {
+
+  if (req.currentUser.id !== investment.userId.toString() && req.currentUser.role !== userRoles.ADMIN) {
     const error = appError.create('Unauthorized to view this investment', 403, httpStatusText.FAIL);
     return next(error);
   }
-  const property = await Property.findById(investment.propertyId);
 
-  const sharePriceVariationPercentage = ((property.pricePerShare[property.pricePerShare.length - 1] - investment.sharePrice) / 100);
+  const property = await Property.findById(investment.propertyId);
+  if (!property) {
+    const error = appError.create('Property not found', 404, httpStatusText.FAIL);
+    return next(error);
+  }
+
+  const priceNumbers = property.pricePerShareHistory.map(entry => entry.pricePerShare);
+  const latestPrice = priceNumbers.at(-1); 
+
+  const sharePriceVariationPercentage = ((latestPrice - investment.sharePrice) / investment.sharePrice) * 100;
 
   return res.status(200).json({
     investment: {
@@ -141,6 +175,7 @@ exports.getInvestmentById = asyncWrapper(async (req, res, next) => {
     },
   });
 });
+
 
 exports.deleteInvestmentById = asyncWrapper(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -152,7 +187,7 @@ exports.deleteInvestmentById = asyncWrapper(async (req, res, next) => {
     const error = appError.create('Investment not found', 404, httpStatusText.FAIL);
     return next(error);
   }
-  if (req.currentUser.id !== investment.userId.toString() && req.currentUser.role !== userRoles.ADMIN ) {
+  if (req.currentUser.id !== investment.userId.toString() && req.currentUser.role !== userRoles.ADMIN) {
     const error = appError.create('Unauthorized to delete this investment', 403, httpStatusText.FAIL);
     return next(error);
   }
@@ -264,12 +299,14 @@ exports.getAllInvestments = asyncWrapper(async (req, res, next) => {
           lastName: '$user.lastName'
         },
         propertyId: {
-          title: '$property.title'
+          title: '$property.title',
+          images: '$property.images',
+          id: '$property._id'
         }
       }
     }
   ];
-  
+
   const investments = await Investment.aggregate(aggregation);
 
   const countAggregation = await Investment.aggregate([
@@ -323,3 +360,42 @@ exports.getMyreturnsOnInvestment = asyncWrapper(async (req, res, next) => {
   }
 });
 
+exports.sellInvestment = asyncWrapper(async (req, res, next) => {
+  const userId = req.currentUser.id;
+  const investmentId = req.params.id;
+
+  if (!mongoose.Types.ObjectId.isValid(investmentId)) {
+    return next(appError.create('Invalid investment ID', 400, httpStatusText.FAIL));
+  }
+  const investment = await Investment.findById(investmentId);
+
+  if (!investment) {
+    return next(appError.create('Investment not found', 404, httpStatusText.FAIL));
+  }
+
+  if (investment.userId.toString() !== userId) {
+    return next(appError.create('You are not allowed to sell this investment', 403, httpStatusText.FAIL));
+  }
+
+  const property = await Property.findById(investment.propertyId);
+  if (!property) {
+    return next(appError.create('Property not found', 404, httpStatusText.FAIL));
+  }
+  property.availableShares += investment.numOfShares;
+  const priceNumbers = property.pricePerShareHistory.map(entry => entry.pricePerShare);
+  const sharePrice = priceNumbers.at(-1);
+  const sellingPrice = investment.numOfShares * sharePrice;
+  const user = await User.findById(userId);
+  if (!user) {
+    return next(appError.create('User not found', 404, httpStatusText.FAIL));
+  }
+  user.balance += sellingPrice;
+  await user.save();
+  await Transaction.create({
+    userId,
+    investmentId: investment._id,
+    transactionType: 'selling',
+    amount: sellingPrice,
+  });
+  investment.investmentStatus = 'sold';
+});

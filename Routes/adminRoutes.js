@@ -1,5 +1,6 @@
 const express = require('express');
 const adminController = require('../Controllers/adminController');
+const TransactionController = require('../Controllers/TransactionController');
 const allowedTo = require('../Middlewares/allowedTo');
 const userRoles = require('../utils/constants/userRoles');
 const { uploadMultiple } = require('../Config/cloudinaryConfig');
@@ -76,5 +77,18 @@ router
 router
   .route('/getAllusersInvestedOnproperty/:id')
   .get(adminController.getAllUsersInvestedOnProperty);
+
+
+
+
+//transactions
+router
+  .route('/transactions')
+  .get(TransactionController.getAllTransactions);
+router
+  .route('/transactions/:id')
+  .get(TransactionController.getTransactionById)
+  .delete(TransactionController.deleteTransactionById);
+
 module.exports = router;
 
