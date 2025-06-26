@@ -2,7 +2,7 @@ const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
 const corsOptions = require('./Config/corsOptions');
-const passport = require('./Config/passport');
+// const passport = require('./Config/passport');
 const session = require('express-session');
 const adminRouter = require('./Routes/adminRoutes');
 const authRouter = require('./Routes/authRoutes');
@@ -32,8 +32,8 @@ app.use(
   }),
 );
 
-app.use(passport.initialize());
-app.use(passport.session());
+// app.use(passport.initialize());
+// app.use(passport.session());
 app.get('/', (req, res) => {
   res.send('Welcome from the server');
 });

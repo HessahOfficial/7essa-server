@@ -1,7 +1,9 @@
 {
   "type": "commonjs",
   "scripts": {
-    "start": "nodemon server.js"
+    "start": "node server.js",
+    "test": "jest",
+    "dev": "nodemon server.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
@@ -33,6 +35,9 @@
     "validator": "^13.15.15"
   },
   "devDependencies": {
-    "prettier": "^3.4.2"
+    "jest": "^30.0.2",
+    "mongodb-memory-server": "^10.1.4",
+    "prettier": "^3.4.2",
+    "supertest": "^7.1.1"
   }
 }
