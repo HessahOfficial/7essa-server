@@ -10,7 +10,10 @@ const paymentSchema = new mongoose.Schema({
     required: [true, 'payment type is required'],
     enum: ['deposit', 'withdraw'],
   },
-
+  screenshot: {
+    type: String,
+    required: [true, 'screenshot is required'],
+  },
   amount: {
     type: Number,
     required: [true, 'amount is required'],

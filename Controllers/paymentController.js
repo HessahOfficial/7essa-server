@@ -10,6 +10,11 @@ const egyptTime = moment.tz('Africa/Cairo').utc().format(); // Default format is
 exports.createPayment = asyncWrapper(async (req, res, next) => {
     let userId = req.currentUser.id;
     const { amount, paymentMethod, paymentType } = req.body;
+    const screenshot = req.file ? req.file.path : null;
+    if (!screenshot) {
+        const error = appError.create('Screenshot is required', 400, httpStatusText.FAIL);
+        return next(error);
+    }
 
     if (!userId || typeof userId !== 'string') {
         const error = appError.create('User ID is required and must be a string', 400, httpStatusText.FAIL);
@@ -47,6 +52,7 @@ exports.createPayment = asyncWrapper(async (req, res, next) => {
         paymentMethod,
         paymentDate: egyptTime,
         paymentType,
+        screenshot,
     });
 
     await newPayment.save();

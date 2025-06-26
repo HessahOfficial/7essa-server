@@ -334,6 +334,13 @@ exports.sendPushNotificationToUser = async (req, res) => {
   try {
     const { token, title, body } = req.body;
 
+    if (!token || !title || !body) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token, title, and body are required!',
+      });
+    }
+
     const message = {
       notification: {
         title: title,
@@ -359,6 +366,13 @@ exports.sendPushNotificationToUser = async (req, res) => {
 exports.sendPushNotificationToAll = async (req, res) => {
   try {
     const { title, body } = req.body;
+
+    if (!title || !body) {
+      return res.status(400).json({
+        success: false,
+        message: 'Title and body are required!',
+      });
+    }
 
     const message = {
       notification: {

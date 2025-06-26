@@ -6,6 +6,7 @@ const {
   getDepositHistory,
   getWithdrawHistory,
 } = require('../Controllers/paymentController');
+const { upload } = require('../Config/cloudinaryConfig')
 
 const {
   verifyToken,
@@ -14,7 +15,7 @@ const {
 const express = require('express');
 const router = express.Router();
 
-router.post('/create', verifyToken, createPayment);
+router.post('/create', verifyToken, upload.single('screenshot'), createPayment);
 router.get('/status/:id', getPaymentStatus);
 router.get('/history/', verifyToken, getHistory);
 router.delete('/:id', verifyToken, deletePayment);
