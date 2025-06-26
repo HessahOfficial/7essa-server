@@ -631,7 +631,19 @@ exports.becomeInvestor = asyncWrapper(
       );
       return next(error);
     }
-    // use verifyNationalId
+
+    // Check if a file is uploaded
+    const nationalIdPhoto = req.file ? req.file.path : null;
+    if (!nationalIdPhoto) {
+      const error = appError.create(
+        'National ID photo is required!',
+        400,
+        httpStatusText.ERROR,
+      );
+      return next(error);
+    }
+
+    // Use verifyNationalId
     const { isValid, error, userExteraInfo } =
       verifyNationalId(nationalId);
 
@@ -645,13 +657,14 @@ exports.becomeInvestor = asyncWrapper(
     }
 
     oldUser.nationalId = nationalId;
+    oldUser.nationalIdPhoto = nationalIdPhoto; // Save the photo path
     oldUser.isInvestor = true;
 
     await oldUser.save();
 
     res.status(200).json({
       status: httpStatusText.SUCCESS,
-      message: 'Congratulations. you ara an investor!',
+      message: 'Congratulations. You are now an investor!',
       data: {
         user: {
           username: oldUser.username,
@@ -659,6 +672,7 @@ exports.becomeInvestor = asyncWrapper(
           email: oldUser.email,
           avatar: oldUser.avatar,
           nationalId: oldUser.nationalId,
+          nationalIdPhoto: oldUser.nationalIdPhoto, // Include the photo in the response
           isInvestor: oldUser.isInvestor,
           userExteraInfo,
         },
@@ -678,4 +692,7 @@ exports.getAllPartners = asyncWrapper(async (req, res, next) => {
     }
   });
 });
+
+
+
 

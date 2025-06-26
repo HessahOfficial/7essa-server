@@ -41,7 +41,7 @@ router.route("/pin/:userId")
   .post(allowedToSameUserAnd(), changePinCode);
 
 router.route("/investor/:userId")
-  .post(allowedToSameUserAnd(), becomeInvestor);
+  .post(allowedToSameUserAnd(), upload.single('nationalIdPhoto'), becomeInvestor);
 
 router.post(
   '/updateAvatar/:id',
@@ -67,6 +67,7 @@ router.post(
   sendPushNotificationToAll,
 );
 router.post('/notifyUser', sendPushNotificationToUser);
+
 
 module.exports = router;
 
