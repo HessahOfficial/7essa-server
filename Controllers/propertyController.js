@@ -144,7 +144,7 @@ exports.getAllProperties = asyncWrapper(
 
 exports.getPropertyById = asyncWrapper(
   async (req, res, next) => {
-    const property = await Property.findById(req.params.id);
+    const property = await Property.findById(req.params.id).populate('owner', 'fullName avatar phoneNumber');
     if (!property) {
       const error = appError.create(
         'Property not found',
