@@ -8,6 +8,7 @@ const httpStatusText = require('../utils/constants/httpStatusText');
 const User = require('../Models/userModel');
 const userRoles = require('../utils/constants/userRoles');
 const Property = require('../Models/propertyModel');
+const INVESTMENT_STATUS = require("../utils/constants/INVESTMENT_STATUS");
 
 // handle Transactions (APPROVE , REJECT ) only for admins
 exports.handleTransactionStatus = asyncWrapper(async (req, res, next) => {
@@ -48,6 +49,21 @@ exports.handleTransactionStatus = asyncWrapper(async (req, res, next) => {
   if (action === 'approve') {
     const { numOfShares, totalAmount } = transaction;
 
+    // Update investment status based on number of Shares
+    if(numOfShares > investment.numOfShares) {
+      investment.investmentStatus = INVESTMENT_STATUS.ACTIVE;
+      investment.numOfShares -=  numOfShares;
+      await investment.save();
+    } else if(numOfShares == investment.numOfShares) {
+      investment.investmentStatus = INVESTMENT_STATUS.SOLD;
+      investment.numOfShares -=  numOfShares;
+      await investment.save();
+    } else {
+      investment.investmentStatus = INVESTMENT_STATUS.ACTIVE;
+      await investment.save();
+      return next(appError.create('You cannot sell more shares than you currently own in this investment.', 400, httpStatusText.FAIL));
+    }
+
     // Update user balance
     user.balance += totalAmount;
     await user.save();
@@ -55,10 +71,6 @@ exports.handleTransactionStatus = asyncWrapper(async (req, res, next) => {
     // Update property available shares
     property.availableShares += numOfShares;
     await property.save();
-
-    // Update investment
-    investment.investmentStatus = 'sold';
-    await investment.save();
 
     // Update transaction status
     transaction.status = 'completed';
