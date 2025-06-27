@@ -12,6 +12,7 @@ const Transaction = require('../Models/TransactionModel');
 exports.makeInvestment = asyncWrapper(async (req, res, next) => {
   const userId = req.currentUser.id;
   const propertyId = req.params.id;
+
   const property = await Property.findById(propertyId);
   const user = await User.findById(userId);
 
@@ -32,47 +33,44 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
     return next(appError.create('Insufficient balance to make this investment', 400, httpStatusText.FAIL));
   }
 
-  let existingInvestment = await Investment.findOne({ userId, propertyId });
+  // ❗ ابحث عن استثمار نشط موجود فعلاً
+  let investment = await Investment.findOne({
+    userId,
+    propertyId,
+    investmentStatus: 'active',
+  });
 
-  const updatedAvailableShares = property.availableShares - numOfShares;
-  property.availableShares = updatedAvailableShares;
+  // خصم الشيرز من العقار
+  property.availableShares -= numOfShares;
   await property.save();
 
   const isRented = property.isRented;
-
   let monthlyReturns = 0;
   let annualReturns = 0;
-  let totalReturns = 0;
   let netGains = 0;
 
   if (isRented) {
     monthlyReturns = (property.rentalIncome / property.totalShares) * numOfShares * 0.6;
     annualReturns = monthlyReturns * 12;
   } else {
-    // لو مش مؤجر، نحسب الأرباح وقت البيع بس
     netGains = (property.priceSold || 0) - investmentAmount;
   }
 
-  const totalSharesPercentage = ((existingInvestment?.numOfShares || 0) + numOfShares) / property.totalShares * 100;
-
-  let investment;
-
-  if (existingInvestment && existingInvestment.investmentStatus === 'active') {
-    // تعديل الدوك الموجود
-    existingInvestment.numOfShares += numOfShares;
-    existingInvestment.investmentAmount += investmentAmount;
-    existingInvestment.totalSharesPercentage = totalSharesPercentage;
-    existingInvestment.netGains += netGains;
+  if (investment) {
+    // ✅ تحديث الاستثمار الموجود
+    investment.numOfShares += numOfShares;
+    investment.investmentAmount += investmentAmount;
+    investment.totalSharesPercentage = (investment.numOfShares / property.totalShares) * 100;
+    investment.netGains += netGains;
 
     if (isRented) {
-      existingInvestment.monthlyReturns += monthlyReturns;
-      existingInvestment.annualReturns += annualReturns;
+      investment.monthlyReturns += monthlyReturns;
+      investment.annualReturns += annualReturns;
     }
 
-    await existingInvestment.save();
-    investment = existingInvestment;
+    await investment.save();
   } else {
-    // إنشاء استثمار جديد
+    // ✅ إنشاء استثمار جديد
     investment = await Investment.create({
       userId,
       propertyId,
@@ -80,10 +78,12 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
       sharePrice,
       monthlyReturns,
       annualReturns,
-      totalReturns,
+      totalReturns: 0,
       netGains,
-      totalSharesPercentage,
+      totalSharesPercentage: (numOfShares / property.totalShares) * 100,
       investmentAmount,
+      investmentStatus: 'active',
+      investmentDate: new Date(),
     });
   }
 
@@ -105,8 +105,9 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
     transactionDate: new Date(),
   });
 
-  return res.status(existingInvestment ? 200 : 201).json({ investment });
+  return res.status(201).json({ investment });
 });
+
 
 
 exports.sellInvestment = asyncWrapper(async (req, res, next) => {
