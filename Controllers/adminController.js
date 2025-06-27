@@ -10,7 +10,6 @@ const validator = require('validator');
 const httpStatusText = require('../utils/constants/httpStatusText');
 const USER_ACTIVITY = require('../utils/constants/USER_ACTIVITY');
 const userRoles = require('../utils/constants/userRoles');
-const Transaction = require('../Models/TransactionModel');
 
 //For properties
 exports.getAllProperties = asyncWrapper(async (req, res, next) => {
