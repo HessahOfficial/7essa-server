@@ -392,3 +392,22 @@ exports.getMyreturnsOnInvestment = asyncWrapper(async (req, res, next) => {
   }
 });
 
+exports.deleteInvestmentById = asyncWrapper(async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    const error = appError.create('Invalid property ID', 400, httpStatusText.FAIL);
+    return next(error);
+  }
+  const investment = await Investment.findById(req.params.id);
+  if (!investment) {
+    const error = appError.create('Investment not found', 404, httpStatusText.FAIL);
+    return next(error);
+  }
+  if (req.currentUser.id !== investment.userId.toString() && req.currentUser.role !== userRoles.ADMIN ) {
+    const error = appError.create('Unauthorized to delete this investment', 403, httpStatusText.FAIL);
+    return next(error);
+  }
+
+  await Investment.findByIdAndDelete(req.params.id);
+  return res.status(200).json({ status: 'success', message: ' Request Deleted Sucessfully', data: investment });
+
+});
