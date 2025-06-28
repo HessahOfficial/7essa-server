@@ -56,12 +56,12 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
 
       user.balance -= investmentAmount;
       await user.save();
-await Transaction.create({
-  userId,
-  investmentId: existingInvestment?._id || investment._id,
-  transactionType: 'investing',
-  amount: investmentAmount,
-});
+      await Transaction.create({
+        userId,
+        investmentId: existingInvestment?._id || investment._id,
+        transactionType: 'investing',
+        amount: investmentAmount,
+      });
 
       return res.status(200).json({ investment: existingInvestment });
     } else {
@@ -79,12 +79,12 @@ await Transaction.create({
 
       user.balance -= investmentAmount;
       await user.save();
-await Transaction.create({
-  userId,
-  investmentId: existingInvestment?._id || investment._id,
-  transactionType: 'investing',
-  amount: investmentAmount,
-});
+      await Transaction.create({
+        userId,
+        investmentId: existingInvestment?._id || investment._id,
+        transactionType: 'investing',
+        amount: investmentAmount,
+      });
 
       return res.status(201).json({ investment });
     }
@@ -102,12 +102,12 @@ await Transaction.create({
 
       user.balance -= investmentAmount;
       await user.save();
-await Transaction.create({
-  userId,
-  investmentId: existingInvestment?._id || investment._id,
-  transactionType: 'investing',
-  amount: investmentAmount,
-});
+      await Transaction.create({
+        userId,
+        investmentId: existingInvestment?._id || investment._id,
+        transactionType: 'investing',
+        amount: investmentAmount,
+      });
 
       return res.status(200).json({ investment: existingInvestment });
     } else {
@@ -124,12 +124,12 @@ await Transaction.create({
 
       user.balance -= investmentAmount;
       await user.save();
-await Transaction.create({
-  userId,
-  investmentId: existingInvestment?._id || investment._id,
-  transactionType: 'investing',
-  amount: investmentAmount,
-});
+      await Transaction.create({
+        userId,
+        investmentId: existingInvestment?._id || investment._id,
+        transactionType: 'investing',
+        amount: investmentAmount,
+      });
 
       return res.status(201).json({ investment });
     }
@@ -164,7 +164,7 @@ exports.getInvestmentById = asyncWrapper(async (req, res, next) => {
   }
 
   const priceNumbers = property.pricePerShareHistory.map(entry => entry.pricePerShare);
-  const latestPrice = priceNumbers.at(-1); 
+  const latestPrice = priceNumbers.at(-1);
 
   const sharePriceVariationPercentage = ((latestPrice - investment.sharePrice) / investment.sharePrice) * 100;
 
@@ -293,6 +293,12 @@ exports.getAllInvestments = asyncWrapper(async (req, res, next) => {
         sharePrice: 1,
         displayingSharePrice: 1,
         investmentAmount: 1,
+        lastPaymentDate: 1,
+        annualReturns: 1,
+        monthlyReturns: 1,
+        totalReturns: 1,
+        netGains: 1,
+        totalSharesPercentage: 1,
         userId: {
           avatar: '$user.avatar',
           firstName: '$user.firstName',
