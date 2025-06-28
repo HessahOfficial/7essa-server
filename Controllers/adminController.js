@@ -10,11 +10,8 @@ const validator = require('validator');
 const httpStatusText = require('../utils/constants/httpStatusText');
 const USER_ACTIVITY = require('../utils/constants/USER_ACTIVITY');
 const userRoles = require('../utils/constants/userRoles');
-<<<<<<< HEAD
 const Transaction = require('../Models/TransactionModel');
 const fs = require('fs');
-=======
->>>>>>> 4c2b9edaaf1095ea38a446e1741d7c6ea4a251d5
 
 //For properties
 exports.getAllProperties = asyncWrapper(async (req, res, next) => {
@@ -229,7 +226,6 @@ exports.updateProperty = asyncWrapper(async (req, res, next) => {
     property.images.push(...newImages);
   }
 
-  // Save updated property
   await property.save();
 
   res.status(200).json({
@@ -344,7 +340,6 @@ exports.getAllPayments = asyncWrapper(async (req, res, next) => {
         paymentMethod: 1,
         paymentDate: 1,
         paymentStatus: 1,
-        screenshot: 1,
         userId: {
           avatar: '$user.avatar',
           firstName: '$user.firstName',
