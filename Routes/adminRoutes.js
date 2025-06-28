@@ -18,7 +18,7 @@ router
 router
   .route('/properties/:id')
   .get(adminController.getPropertyById)
-  .patch(adminController.updateProperty)
+  .patch(uploadMultiple, adminController.updateProperty)
   .delete(adminController.deleteProperty);
 
 //payments

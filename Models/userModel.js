@@ -7,7 +7,11 @@ const userSchema = new mongoose.Schema(
     nationalId: {
       type: String,
       unique: true,
-      length: 14
+      length: 14,
+    },
+    nationalIdPhoto: {
+      type: String,
+      default: null, // Default value if no photo is uploaded
     },
     isInvestor: { type: Boolean, default: false },
     firstName: { type: String, required: true },
