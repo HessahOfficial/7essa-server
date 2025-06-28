@@ -12,7 +12,6 @@ const paymentSchema = new mongoose.Schema({
   },
   screenshot: {
     type: String,
-    required: [true, 'screenshot is required'],
   },
   amount: {
     type: Number,

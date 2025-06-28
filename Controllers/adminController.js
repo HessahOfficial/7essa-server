@@ -112,7 +112,7 @@ exports.createProperty = asyncWrapper(async (req, res, next) => {
     locationLink,
     size,
     numOfRooms,
-    images: req.files?.map(file => file.path),
+    images: req.files?.map(file => file.path) || req.body.images || [],
     totalShares,
     availableShares,
     yearlyPayment,
