@@ -10,7 +10,7 @@ const validator = require('validator');
 const httpStatusText = require('../utils/constants/httpStatusText');
 const USER_ACTIVITY = require('../utils/constants/USER_ACTIVITY');
 const userRoles = require('../utils/constants/userRoles');
-const Transaction = require('../Models/TransactionModel');
+
 const fs = require('fs');
 
 //For properties
@@ -340,6 +340,7 @@ exports.getAllPayments = asyncWrapper(async (req, res, next) => {
         paymentMethod: 1,
         paymentDate: 1,
         paymentStatus: 1,
+        screenshot: 1,
         userId: {
           avatar: '$user.avatar',
           firstName: '$user.firstName',

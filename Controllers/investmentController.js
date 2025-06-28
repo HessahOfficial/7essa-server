@@ -12,6 +12,7 @@ const Transaction = require('../Models/TransactionModel');
 exports.makeInvestment = asyncWrapper(async (req, res, next) => {
   const userId = req.currentUser.id;
   const propertyId = req.params.id;
+
   const property = await Property.findById(propertyId);
   const user = await User.findById(userId);
 
@@ -20,7 +21,7 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
   }
 
   const numOfShares = req.body.numberOfShares;
-  const sharePrice = property.pricePerShare
+  const sharePrice = property.pricePerShare;
 
   if (numOfShares > property.availableShares) {
     return next(appError.create('Number of shares exceeds available shares', 400, httpStatusText.FAIL));
@@ -32,110 +33,141 @@ exports.makeInvestment = asyncWrapper(async (req, res, next) => {
     return next(appError.create('Insufficient balance to make this investment', 400, httpStatusText.FAIL));
   }
 
-  let existingInvestment = await Investment.findOne({ userId, propertyId });
+  // ❗ ابحث عن استثمار نشط موجود فعلاً
+  let investment = await Investment.findOne({
+    userId,
+    propertyId,
+    investmentStatus: 'active',
+  });
 
-  const updatedAvailableShares = property.availableShares - numOfShares;
-  await Property.findByIdAndUpdate(propertyId, { availableShares: updatedAvailableShares });
+  // خصم الشيرز من العقار
+  property.availableShares -= numOfShares;
+  await property.save();
 
-  if (property.isRented) {
-    const monthlyReturns = (property.rentalIncome / property.totalShares) * numOfShares * 0.6;
-    const annualReturns = monthlyReturns * 12;
-    const totalReturns = 0;
-    const netGains = totalReturns - investmentAmount;
-    const totalSharesPercentage = ((existingInvestment?.numOfShares || 0) + numOfShares) / property.totalShares * 100;
+  const isRented = property.isRented;
+  let monthlyReturns = 0;
+  let annualReturns = 0;
+  let netGains = 0;
 
-    if (existingInvestment && existingInvestment.investmentStatus === 'active') {
-      existingInvestment.numOfShares += numOfShares;
-      existingInvestment.investmentAmount += investmentAmount;
-      existingInvestment.monthlyReturns += monthlyReturns;
-      existingInvestment.annualReturns += annualReturns;
-      existingInvestment.totalSharesPercentage = totalSharesPercentage;
-      existingInvestment.netGains += netGains;
-      await existingInvestment.save();
-
-
-      user.balance -= investmentAmount;
-      await user.save();
-      await Transaction.create({
-        userId,
-        investmentId: existingInvestment?._id || investment._id,
-        transactionType: 'investing',
-        amount: investmentAmount,
-      });
-
-      return res.status(200).json({ investment: existingInvestment });
-    } else {
-      const investment = await Investment.create({
-        userId,
-        propertyId,
-        numOfShares,
-        sharePrice: sharePrice,
-        monthlyReturns,
-        annualReturns,
-        netGains,
-        totalSharesPercentage,
-        investmentAmount,
-      });
-
-      user.balance -= investmentAmount;
-      await user.save();
-      await Transaction.create({
-        userId,
-        investmentId: existingInvestment?._id || investment._id,
-        transactionType: 'investing',
-        amount: investmentAmount,
-      });
-
-      return res.status(201).json({ investment });
-    }
-
+  if (isRented) {
+    monthlyReturns = (property.rentalIncome / property.totalShares) * numOfShares * 0.6;
+    annualReturns = monthlyReturns * 12;
   } else {
-    const netGains = property.priceSold - investmentAmount;
-    const totalSharesPercentage = ((existingInvestment?.numOfShares || 0) + numOfShares) / property.totalShares * 100;
-
-    if (existingInvestment && existingInvestment.investmentStatus === 'active') {
-      existingInvestment.numOfShares += numOfShares;
-      existingInvestment.investmentAmount += investmentAmount;
-      existingInvestment.netGains += netGains;
-      existingInvestment.totalSharesPercentage = totalSharesPercentage;
-      await existingInvestment.save();
-
-      user.balance -= investmentAmount;
-      await user.save();
-      await Transaction.create({
-        userId,
-        investmentId: existingInvestment?._id || investment._id,
-        transactionType: 'investing',
-        amount: investmentAmount,
-      });
-
-      return res.status(200).json({ investment: existingInvestment });
-    } else {
-      const investment = await Investment.create({
-        userId,
-        propertyId,
-        numOfShares,
-        sharePrice: sharePrice,
-        netGains,
-        totalSharesPercentage,
-        investmentAmount,
-      });
-
-
-      user.balance -= investmentAmount;
-      await user.save();
-      await Transaction.create({
-        userId,
-        investmentId: existingInvestment?._id || investment._id,
-        transactionType: 'investing',
-        amount: investmentAmount,
-      });
-
-      return res.status(201).json({ investment });
-    }
+    netGains = (property.priceSold || 0) - investmentAmount;
   }
+
+  if (investment) {
+    // ✅ تحديث الاستثمار الموجود
+    investment.numOfShares += numOfShares;
+    investment.investmentAmount += investmentAmount;
+    investment.totalSharesPercentage = (investment.numOfShares / property.totalShares) * 100;
+    investment.netGains += netGains;
+
+    if (isRented) {
+      investment.monthlyReturns += monthlyReturns;
+      investment.annualReturns += annualReturns;
+    }
+
+    await investment.save();
+  } else {
+    // ✅ إنشاء استثمار جديد
+    investment = await Investment.create({
+      userId,
+      propertyId,
+      numOfShares,
+      sharePrice,
+      monthlyReturns,
+      annualReturns,
+      totalReturns: 0,
+      netGains,
+      totalSharesPercentage: (numOfShares / property.totalShares) * 100,
+      investmentAmount,
+      investmentStatus: 'active',
+      investmentDate: new Date(),
+    });
+  }
+
+  // خصم من رصيد المستخدم
+  user.balance -= investmentAmount;
+  await user.save();
+
+  // إنشاء Transaction
+  await Transaction.create({
+    userId,
+    investmentId: investment._id,
+    propertyId,
+    transactionType: 'investing',
+    numOfShares,
+    pricePerShareAtTransaction: sharePrice,
+    totalAmount: investmentAmount,
+    status: 'completed',
+    netGain: netGains,
+    transactionDate: new Date(),
+  });
+
+  return res.status(201).json({ investment });
 });
 
+
+
+exports.sellInvestment = asyncWrapper(async (req, res, next) => {
+  const userId = req.currentUser.id;
+  const investmentId = req.params.id;
+  const { numOfSharesToSell } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(investmentId)) {
+    return next(appError.create('Invalid investment ID', 400, httpStatusText.FAIL));
+  }
+
+  const investment = await Investment.findById(investmentId);
+  if (!investment) {
+    return next(appError.create('Investment not found', 404, httpStatusText.FAIL));
+  }
+
+  if (investment.userId.toString() !== userId) {
+    return next(appError.create('You are not allowed to sell this investment', 403, httpStatusText.FAIL));
+  }
+
+  if (!numOfSharesToSell || numOfSharesToSell <= 0) {
+    return next(appError.create('Please provide a valid number of shares to sell', 400, httpStatusText.FAIL));
+  }
+
+  if (numOfSharesToSell > investment.numOfShares) {
+    return next(appError.create('You cannot sell more shares than you own', 400, httpStatusText.FAIL));
+  }
+
+  const property = await Property.findById(investment.propertyId);
+  if (!property) {
+    return next(appError.create('Property not found', 404, httpStatusText.FAIL));
+  }
+
+  const priceHistory = property.pricePerShareHistory;
+  const latestSharePrice = priceHistory.length > 0
+    ? priceHistory[priceHistory.length - 1].pricePerShare
+    : property.pricePerShare;
+
+  const sellingAmount = numOfSharesToSell * latestSharePrice;
+
+  // ❌ لا تعدل على الاستثمار الآن، فقط أنشئ الترانزاكشن
+  const transaction = await Transaction.create({
+    userId,
+    investmentId: investment._id,
+    propertyId: investment.propertyId,
+    transactionType: 'selling',
+    numOfShares: numOfSharesToSell,
+    pricePerShareAtTransaction: latestSharePrice,
+    totalAmount: sellingAmount,
+    netGain: investment.netGains,
+    status: 'pending',
+    transactionDate: new Date(),
+  });
+
+  return res.status(200).json({
+    status: 'success',
+    message: 'Selling request submitted. Awaiting admin confirmation.',
+    transaction,
+  });
+});
 
 
 
@@ -164,7 +196,7 @@ exports.getInvestmentById = asyncWrapper(async (req, res, next) => {
   }
 
   const priceNumbers = property.pricePerShareHistory.map(entry => entry.pricePerShare);
-  const latestPrice = priceNumbers.at(-1);
+  const latestPrice = priceNumbers.at(-1); 
 
   const sharePriceVariationPercentage = ((latestPrice - investment.sharePrice) / investment.sharePrice) * 100;
 
@@ -293,12 +325,6 @@ exports.getAllInvestments = asyncWrapper(async (req, res, next) => {
         sharePrice: 1,
         displayingSharePrice: 1,
         investmentAmount: 1,
-        lastPaymentDate: 1,
-        annualReturns: 1,
-        monthlyReturns: 1,
-        totalReturns: 1,
-        netGains: 1,
-        totalSharesPercentage: 1,
         userId: {
           avatar: '$user.avatar',
           firstName: '$user.firstName',
@@ -366,42 +392,22 @@ exports.getMyreturnsOnInvestment = asyncWrapper(async (req, res, next) => {
   }
 });
 
-exports.sellInvestment = asyncWrapper(async (req, res, next) => {
-  const userId = req.currentUser.id;
-  const investmentId = req.params.id;
-
-  if (!mongoose.Types.ObjectId.isValid(investmentId)) {
-    return next(appError.create('Invalid investment ID', 400, httpStatusText.FAIL));
+exports.deleteInvestmentById = asyncWrapper(async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    const error = appError.create('Invalid property ID', 400, httpStatusText.FAIL);
+    return next(error);
   }
-  const investment = await Investment.findById(investmentId);
-
+  const investment = await Investment.findById(req.params.id);
   if (!investment) {
-    return next(appError.create('Investment not found', 404, httpStatusText.FAIL));
+    const error = appError.create('Investment not found', 404, httpStatusText.FAIL);
+    return next(error);
+  }
+  if (req.currentUser.id !== investment.userId.toString() && req.currentUser.role !== userRoles.ADMIN ) {
+    const error = appError.create('Unauthorized to delete this investment', 403, httpStatusText.FAIL);
+    return next(error);
   }
 
-  if (investment.userId.toString() !== userId) {
-    return next(appError.create('You are not allowed to sell this investment', 403, httpStatusText.FAIL));
-  }
+  await Investment.findByIdAndDelete(req.params.id);
+  return res.status(200).json({ status: 'success', message: ' Request Deleted Sucessfully', data: investment });
 
-  const property = await Property.findById(investment.propertyId);
-  if (!property) {
-    return next(appError.create('Property not found', 404, httpStatusText.FAIL));
-  }
-  property.availableShares += investment.numOfShares;
-  const priceNumbers = property.pricePerShareHistory.map(entry => entry.pricePerShare);
-  const sharePrice = priceNumbers.at(-1);
-  const sellingPrice = investment.numOfShares * sharePrice;
-  const user = await User.findById(userId);
-  if (!user) {
-    return next(appError.create('User not found', 404, httpStatusText.FAIL));
-  }
-  user.balance += sellingPrice;
-  await user.save();
-  await Transaction.create({
-    userId,
-    investmentId: investment._id,
-    transactionType: 'selling',
-    amount: sellingPrice,
-  });
-  investment.investmentStatus = 'sold';
 });
