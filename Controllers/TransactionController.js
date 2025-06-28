@@ -203,7 +203,7 @@ exports.getAllTransactions = asyncWrapper(async (req, res, next) => {
         userId: {
           firstName: '$user.firstName',
           lastName: '$user.lastName',
-          email: '$user.email',
+          avatar: '$user.avatar',
           _id: '$user._id',
         },
         propertyId: {
