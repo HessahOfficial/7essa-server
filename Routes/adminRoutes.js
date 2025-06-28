@@ -1,8 +1,10 @@
 const express = require('express');
 const adminController = require('../Controllers/adminController');
-const TransactionController = require('../Controllers/TransactionController');
+
+const notificationController = require('../Controllers/notificationController');
 const allowedTo = require('../Middlewares/allowedTo');
 const userRoles = require('../utils/constants/userRoles');
+
 const { uploadMultiple } = require('../Config/cloudinaryConfig');
 const router = express.Router();
 const {
@@ -18,7 +20,7 @@ router
 router
   .route('/properties/:id')
   .get(adminController.getPropertyById)
-  .patch(adminController.updateProperty)
+  .patch(uploadMultiple, adminController.updateProperty)
   .delete(adminController.deleteProperty);
 
 //payments
@@ -79,16 +81,9 @@ router
   .get(adminController.getAllUsersInvestedOnProperty);
 
 
-
-
-//transactions
-router
-  .route('/transactions')
-  .get(TransactionController.getAllTransactions);
-router
-  .route('/transactions/:id')
-  .get(TransactionController.getTransactionById)
-  .delete(TransactionController.deleteTransactionById);
+  //notifications
+router.post('/Notification', notificationController.sendNotification);           
+router.post('/Notification/broadcast', notificationController.broadcastNotification); 
 
 module.exports = router;
 

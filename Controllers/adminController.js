@@ -11,6 +11,7 @@ const httpStatusText = require('../utils/constants/httpStatusText');
 const USER_ACTIVITY = require('../utils/constants/USER_ACTIVITY');
 const userRoles = require('../utils/constants/userRoles');
 const Transaction = require('../Models/TransactionModel');
+const fs = require('fs');
 
 //For properties
 exports.getAllProperties = asyncWrapper(async (req, res, next) => {
@@ -138,35 +139,98 @@ exports.createProperty = asyncWrapper(async (req, res, next) => {
 });
 
 exports.updateProperty = asyncWrapper(async (req, res, next) => {
-  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+  const propertyId = req.params.id;
+
+  if (!mongoose.Types.ObjectId.isValid(propertyId)) {
     return next(appError.create('Invalid property ID', 400, httpStatusText.FAIL));
   }
 
-  const property = await Property.findById(req.params.id);
+  const property = await Property.findById(propertyId);
   if (!property) {
     return next(appError.create('Property not found', 404, httpStatusText.FAIL));
   }
 
-  if (typeof req.body.price === 'number') {
-    property.priceHistory.push({ price: req.body.price });
-    property.price = req.body.price;
-    delete req.body.price;
+  const {
+    title,
+    description,
+    city,
+    locationLink,
+    size,
+    numOfRooms,
+    totalShares,
+    availableShares,
+    yearlyPayment,
+    price,
+    pricePerShare,
+    estimatedExitDate,
+    isRented,
+    rentalName,
+    rentalIncome,
+    rentalStartDate,
+    rentalEndDate,
+    managementCompany,
+    status,
+    investmentDocs,
+    benefits,
+    removedImages,
+  } = req.body;
+
+
+  Object.assign(property, {
+    title,
+    description,
+    city,
+    locationLink,
+    size,
+    numOfRooms,
+    totalShares,
+    availableShares,
+    yearlyPayment,
+    price,
+    pricePerShare,
+    estimatedExitDate: estimatedExitDate ? new Date(estimatedExitDate) : property.estimatedExitDate,
+    isRented,
+    rentalName,
+    rentalIncome,
+    rentalStartDate: rentalStartDate ? new Date(rentalStartDate) : property.rentalStartDate,
+    rentalEndDate: rentalEndDate ? new Date(rentalEndDate) : property.rentalEndDate,
+    managementCompany,
+    status,
+    investmentDocs,
+    benefits: benefits ? JSON.parse(benefits) : property.benefits,
+  });
+
+  // Handle price history
+  if (typeof price === 'number' && price !== property.price) {
+    property.priceHistory.push({ price });
+  }
+  if (typeof pricePerShare === 'number' && pricePerShare !== property.pricePerShare) {
+    property.pricePerShareHistory.push({ pricePerShare });
   }
 
-  if (typeof req.body.pricePerShare === 'number') {
-    property.pricePerShareHistory.push({ pricePerShare: req.body.pricePerShare });
-    property.pricePerShare = req.body.pricePerShare;
-    delete req.body.pricePerShare;
+  // Handle image updates
+  if (removedImages) {
+    const imagesToRemove = JSON.parse(removedImages);
+    property.images = property.images.filter(image => !imagesToRemove.includes(image));
+    imagesToRemove.forEach(image => {
+      try {
+        fs.unlinkSync(image); // Remove image from server
+      } catch (err) {
+        console.error(`Failed to delete image: ${image}`, err);
+      }
+    });
   }
-  Object.keys(req.body).forEach(key => {
-    property[key] = req.body[key];
-  });
+
+  if (req.files && req.files.length > 0) {
+    const newImages = req.files.map(file => file.path);
+    property.images.push(...newImages);
+  }
 
   await property.save();
 
-  return res.status(200).json({
+  res.status(200).json({
     status: 'success',
-    data: property
+    data: property,
   });
 });
 

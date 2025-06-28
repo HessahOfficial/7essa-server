@@ -16,6 +16,7 @@ router
   .get(verifyToken, investmentController.getInvestmentById)
   .delete(verifyToken, allowedTo(userRoles.ADMIN), investmentController.deleteInvestmentById);
 
+
 router
   .route('/:id/property')
   .get(

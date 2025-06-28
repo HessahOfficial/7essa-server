@@ -54,7 +54,7 @@ const investmentSchema = new mongoose.Schema({
   displayingSharePrice: {
     type: Object,
   },
-  totalSharesPersantage: {
+  totalSharesPercentage: {
     type: Number,
   },
   investmentAmount: {
