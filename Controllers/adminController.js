@@ -275,6 +275,7 @@ exports.getAllPayments = asyncWrapper(async (req, res, next) => {
         paymentMethod: 1,
         paymentDate: 1,
         paymentStatus: 1,
+        screenshot: 1,
         userId: {
           avatar: '$user.avatar',
           firstName: '$user.firstName',
