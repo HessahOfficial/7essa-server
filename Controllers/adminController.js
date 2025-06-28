@@ -422,7 +422,7 @@ exports.approvePayment = asyncWrapper(async (req, res, next) => {
   const amount = payment.amount;
   const userToUpdate = await User.findByIdAndUpdate(
     userId,
-    { $inc: { balance: amount } },
+    { $inc: { balance: payment.paymentType == "deposit" ? amount : -amount } },
     { new: true, runValidators: true },
   );
   if (!userToUpdate) {

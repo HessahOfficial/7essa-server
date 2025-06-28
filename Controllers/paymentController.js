@@ -18,7 +18,7 @@ exports.createPayment = asyncWrapper(async (req, res, next) => {
     const screenshot = req.file ? req.file.path : null;
     console.log('screenshot', screenshot);
 
-    if (!screenshot) {
+    if (paymentType == "deposit" && !screenshot) {
         const error = appError.create('Screenshot is required', 400, httpStatusText.FAIL);
         return next(error);
     }
@@ -39,7 +39,7 @@ exports.createPayment = asyncWrapper(async (req, res, next) => {
         return next(error);
     }
 
-    if (!amount || isNaN(amount) || amount < 1000) {
+    if (!amount || isNaN(amount) || (paymentType == "deposit" && amount < 1000)) {
         const error = appError.create('Amount is required and must be a valid number greater than or equal to 1000', 400, httpStatusText.FAIL);
         return next(error);
     }
