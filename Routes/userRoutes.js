@@ -1,4 +1,5 @@
 const express = require('express');
+const notificationController = require('../Controllers/notificationController');
 
 const router = express.Router();
 const { upload } = require('../Config/cloudinaryConfig');
@@ -66,7 +67,18 @@ router.post(
   verifyToken,
   sendPushNotificationToAll,
 );
-router.post('/notifyUser', sendPushNotificationToUser);
+
+router.get(
+  '/notifications/my',
+  verifyToken,
+  notificationController.getMyNotifications
+);
+
+router.patch(
+  '/notifications/:id/read',
+  verifyToken,
+  notificationController.markAsRead
+);
 
 
 module.exports = router;

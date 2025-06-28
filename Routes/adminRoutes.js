@@ -1,5 +1,10 @@
 const express = require('express');
 const adminController = require('../Controllers/adminController');
+
+const notificationController = require('../Controllers/notificationController');
+const allowedTo = require('../Middlewares/allowedTo');
+const userRoles = require('../utils/constants/userRoles');
+
 const { uploadMultiple } = require('../Config/cloudinaryConfig');
 const router = express.Router();
 const {
@@ -76,6 +81,9 @@ router
   .get(adminController.getAllUsersInvestedOnProperty);
 
 
+  //notifications
+router.post('/Notification', notificationController.sendNotification);           
+router.post('/Notification/broadcast', notificationController.broadcastNotification); 
 
 module.exports = router;
 
